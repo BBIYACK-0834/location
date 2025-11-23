@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 화면</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 300px;
+        }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login-container button:hover {
+            background: #0056b3;
+        }
+        #signupBtn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+        #signupBtn:hover {
+            background: #218838;
+        }
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>로그인</h2>
+    <input type="text" id="userid" placeholder="아이디">
+    <input type="password" id="userpw" placeholder="비밀번호">
+    <button id="loginBtn">로그인</button>
+    <button id="signupBtn">회원가입</button>
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const messageDiv = document.getElementById('message');
+
+    loginBtn.addEventListener('click', () => {
+        const userid = document.getElementById('userid').value;
+        const userpw = document.getElementById('userpw').value;
+
+        // 유효성 체크
+        if (!userid || !userpw) {
+            messageDiv.textContent = '아이디와 비밀번호를 입력해주세요.';
+            return;
+        }
+
+        fetch('https://scaling-rotary-phone-gppj7946w4jc9wj-8080.app.github.dev/user/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userid, userpw })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('로그인 실패');
+            return res.json();
+        })
+        .then(data => {
+            console.log('로그인 성공:', data);
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = '로그인 성공!';
+        })
+        .catch(err => {
+            console.error(err);
+            messageDiv.style.color = 'red';
+            messageDiv.textContent = '로그인 실패. 아이디/비밀번호 확인';
+        });
+    });
+
+    signupBtn.addEventListener('click', () => {
+        window.location.href = 'signup.html';
+    });
+</script>
+
+</body>
+</html>

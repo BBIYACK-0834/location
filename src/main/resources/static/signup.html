@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .signup-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 320px;
+        }
+        .signup-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .signup-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .signup-container button {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .signup-container button:hover {
+            background: #218838;
+        }
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="signup-container">
+    <h2>회원가입</h2>
+
+    <input type="text" id="userid" placeholder="아이디">
+    <input type="password" id="userpw" placeholder="비밀번호">
+    <input type="password" id="confirmPassword" placeholder="비밀번호 확인">
+    <input type="text" id="username" placeholder="이름">
+    <input type="text" id="useraddress" placeholder="주소">
+    <input type="text" id="userphone" placeholder="전화번호">
+    <input type="email" id="useremail" placeholder="이메일">
+
+    <button id="signupBtn">회원가입</button>
+
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    const signupBtn = document.getElementById('signupBtn');
+    const messageDiv = document.getElementById('message');
+
+    signupBtn.addEventListener('click', () => {
+        const userid = document.getElementById('userid').value.trim();
+        const userpw = document.getElementById('userpw').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const useraddress = document.getElementById('useraddress').value.trim();
+        const userphone = document.getElementById('userphone').value.trim();
+        const useremail = document.getElementById('useremail').value.trim();
+
+        // 유효성 검사
+        if (!userid || !userpw || !confirmPassword || !username || !useraddress || !userphone || !useremail) {
+            messageDiv.textContent = '모든 필드를 입력해주세요.';
+            messageDiv.style.color = 'red';
+            return;
+        }
+
+        if (userpw !== confirmPassword) {
+            messageDiv.textContent = '비밀번호가 일치하지 않습니다.';
+            messageDiv.style.color = 'red';
+            return;
+        }
+
+        // 서버로 전송할 데이터
+        const userData = {
+            userid,
+            userpw,
+            username,
+            useraddress,
+            userphone,
+            useremail
+        };
+
+        fetch('https://scaling-rotary-phone-gppj7946w4jc9wj-8080.app.github.dev/user/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('회원가입 실패');
+            return res.text();
+        })
+        .then(data => {
+            console.log('회원가입 응답:', data);
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = '회원가입이 완료되었습니다!';
+        })
+        .catch(err => {
+            console.error(err);
+            messageDiv.style.color = 'red';
+            messageDiv.textContent = '회원가입 실패. 서버를 확인하세요.';
+        });
+    });
+</script>
+
+</body>
+</html>
