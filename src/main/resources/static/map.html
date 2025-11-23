@@ -2,15 +2,22 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>줌 레벨에 따라 클러스터 합치기 (축소하면 합침)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>모바일 최적화 클러스터 지도</title>
   <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
     #map {
       width: 100%;
-      height: 600px;
+      height: 100vh; /* 화면 전체 높이 */
     }
     .cluster-marker {
-      width: 60px;
-      height: 60px;
+      width: 50px; /* 모바일용 축소 */
+      height: 50px;
       border-radius: 8px;
       overflow: hidden;
       border: 2px solid white;
@@ -36,11 +43,56 @@
       right: 4px;
       background: rgba(0,0,0,0.7);
       color: white;
-      font-size: 12px;
+      font-size: 10px; /* 모바일용 축소 */
       font-weight: bold;
-      padding: 2px 5px;
-      border-radius: 12px;
+      padding: 1px 4px;
+      border-radius: 10px;
       user-select: none;
+    }
+    /* 장소 등록 버튼 스타일 */
+    #registerBtn {
+    position: absolute; /* 버튼을 절대 위치로 설정 */
+    top: 20px; /* 지도 위쪽에서 20px 위치 */
+    left: 20px; /* 지도 왼쪽에서 20px 위치 */
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2; /* 버튼을 지도 위에 표시되도록 설정 */
+  }
+    /* 장소 등록 폼 스타일 */
+    #placeForm {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      width: 300px;
+    }
+    #placeForm input, #placeForm textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #placeForm button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
   </style>
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00e9c16d27cc5857e6ce25b69f784aa"></script>
@@ -48,22 +100,39 @@
 <body>
   <div id="map"></div>
 
+  <!-- 장소 등록 버튼 -->
+  <button id="registerBtn">장소 등록</button>
+
+  <!-- 장소 등록 폼 -->
+  <div id="placeForm">
+    <h3>장소 등록</h3>
+    <label for="placeName">장소 이름</label>
+    <input type="text" id="placeName" placeholder="장소 이름을 입력하세요">
+    <label for="placeDesc">장소 설명</label>
+    <textarea id="placeDesc" rows="4" placeholder="장소에 대한 설명을 입력하세요"></textarea>
+    <label for="placeCategory">카테고리</label>
+    <input type="text" id="placeCategory" placeholder="카테고리를 입력하세요">
+    <label for="placeLikes">좋아요 수</label>
+    <input type="number" id="placeLikes" placeholder="좋아요 수를 입력하세요">
+    <button onclick="registerPlace()">등록</button>
+  </div>
+
   <script>
     const baseLat = 37.5665;
     const baseLng = 126.9780;
-    const clusterCount = 20;
-    const imageSrc = '/mnt/data/5de73308-2d3a-4716-8fac-b82f4db5d259.png'; // 업로드 이미지 경로
+
+    // 모바일에서도 접근 가능한 이미지 URL
+    const imageSrc = '/mnt/data/5de73308-2d3a-4716-8fac-b82f4db5d259.png';
 
     const map = new kakao.maps.Map(document.getElementById('map'), {
       center: new kakao.maps.LatLng(baseLat, baseLng),
       level: 8
     });
 
-    // 클러스터 위치와 개수 배열 생성
     const clusterPositions = [];
     for(let i=0; i<2; i++) {
-      const latOffset = (Math.random() - 0.5) * 0.1;
-      const lngOffset = (Math.random() - 0.5) * 0.1;
+      const latOffset = (Math.random() - 0.5) * 0.05;
+      const lngOffset = (Math.random() - 0.5) * 0.05;
       clusterPositions.push({
         position: new kakao.maps.LatLng(baseLat + latOffset, baseLng + lngOffset),
         count: Math.floor(Math.random() * 100) + 1
@@ -72,7 +141,6 @@
 
     let clusterOverlays = [];
 
-    // 위치 평균 계산 함수
     function averagePosition(positions) {
       let latSum = 0, lngSum = 0;
       positions.forEach(p => {
@@ -82,24 +150,16 @@
       return new kakao.maps.LatLng(latSum / positions.length, lngSum / positions.length);
     }
 
-    // 줌 레벨에 따라 클러스터 묶기 (level 9 이상 확대: 개별, 그 이하면 2개씩 묶음)
     function getClustersForLevel(level) {
       if(level <= 9) {
         return clusterPositions.map(c => [c]);
       } else {
-        const clusters = [];
-        for(let i=0; i<clusterPositions.length; i += 2) {
-          clusters.push(clusterPositions.slice(i, i+2));
-        }
-        return clusters;
+        return [clusterPositions];
       }
     }
 
-    // 클러스터 렌더링 함수
     function renderClusters() {
       const level = map.getLevel();
-
-      // 기존 오버레이 모두 제거
       clusterOverlays.forEach(o => o.setMap(null));
       clusterOverlays = [];
 
@@ -107,7 +167,7 @@
 
       clusters.forEach(group => {
         const positions = group.map(c => c.position);
-        const clusterCount = group.reduce((sum, c) => sum + c.count, 0);
+        const totalCount = group.reduce((sum, c) => sum + c.count, 0);
         const clusterPos = averagePosition(positions);
 
         const content = document.createElement('div');
@@ -119,7 +179,7 @@
 
         const countDiv = document.createElement('div');
         countDiv.className = 'cluster-count';
-        countDiv.textContent = clusterCount;
+        countDiv.textContent = totalCount;
         content.appendChild(countDiv);
 
         const overlay = new kakao.maps.CustomOverlay({
@@ -132,12 +192,33 @@
       });
     }
 
-    // 초기 렌더링
     renderClusters();
 
-    // 줌 변경 및 드래그 종료 시 다시 렌더링
     kakao.maps.event.addListener(map, 'zoom_changed', renderClusters);
     kakao.maps.event.addListener(map, 'dragend', renderClusters);
+
+    // 장소 등록 버튼 클릭 시 폼 보이기
+    document.getElementById('registerBtn').addEventListener('click', function() {
+      document.getElementById('placeForm').style.display = 'block';
+    });
+
+    // 장소 등록 처리 함수
+    function registerPlace() {
+      const name = document.getElementById('placeName').value;
+      const desc = document.getElementById('placeDesc').value;
+      const category = document.getElementById('placeCategory').value;
+      const likes = document.getElementById('placeLikes').value;
+
+      if (name && desc && category && likes) {
+        alert(`장소가 등록되었습니다! \n이름: ${name}\n설명: ${desc}\n카테고리: ${category}\n좋아요: ${likes}`);
+        // 실제 서버에 데이터 전송 처리 (추가 구현 필요)
+        
+        // 폼 숨기기
+        document.getElementById('placeForm').style.display = 'none';
+      } else {
+        alert('모든 필드를 입력해 주세요.');
+      }
+    }
   </script>
 </body>
 </html>

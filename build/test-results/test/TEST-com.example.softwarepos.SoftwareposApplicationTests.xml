@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.example.softwarepos.SoftwareposApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-10-19T07:23:40.645Z" hostname="codespaces-e5d2ab" time="0.628">
+<testsuite name="com.example.softwarepos.SoftwareposApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-11-23T13:33:27.260Z" hostname="codespaces-106deb" time="0.727">
   <properties/>
-  <testcase name="contextLoads()" classname="com.example.softwarepos.SoftwareposApplicationTests" time="0.628"/>
-  <system-out><![CDATA[07:23:33.783 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.example.softwarepos.SoftwareposApplicationTests]: SoftwareposApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-07:23:33.954 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.example.softwarepos.SoftwareposApplication for test class com.example.softwarepos.SoftwareposApplicationTests
+  <testcase name="contextLoads()" classname="com.example.softwarepos.SoftwareposApplicationTests" time="0.727"/>
+  <system-out><![CDATA[13:33:20.252 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.example.softwarepos.SoftwareposApplicationTests]: SoftwareposApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+13:33:20.553 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.example.softwarepos.SoftwareposApplication for test class com.example.softwarepos.SoftwareposApplicationTests
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -14,23 +14,25 @@
 
  :: Spring Boot ::                (v3.4.4)
 
-2025-10-19T07:23:34.560Z  INFO 4165 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : Starting SoftwareposApplicationTests using Java 17.0.16 with PID 4165 (started by codespace in /workspaces/AIShop)
-2025-10-19T07:23:34.562Z  INFO 4165 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : No active profile set, falling back to 1 default profile: "default"
-2025-10-19T07:23:35.789Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
-2025-10-19T07:23:35.790Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
-2025-10-19T07:23:35.851Z  INFO 4165 --- [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface com.example.softwarepos.repository.UserRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
-2025-10-19T07:23:35.852Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 47 ms. Found 0 JDBC repository interfaces.
-2025-10-19T07:23:35.879Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
-2025-10-19T07:23:35.884Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2025-10-19T07:23:35.921Z  INFO 4165 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 30 ms. Found 1 JPA repository interface.
-2025-10-19T07:23:36.838Z  INFO 4165 --- [    Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2025-10-19T07:23:36.884Z  INFO 4165 --- [    Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.11.Final
-2025-10-19T07:23:36.953Z  INFO 4165 --- [    Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2025-10-19T07:23:37.339Z  INFO 4165 --- [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2025-10-19T07:23:37.366Z  INFO 4165 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2025-10-19T07:23:37.718Z  INFO 4165 --- [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
-2025-10-19T07:23:37.723Z  INFO 4165 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2025-10-19T07:23:37.796Z  INFO 4165 --- [    Test worker] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2025-11-23T13:33:21.450Z  INFO 24366 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : Starting SoftwareposApplicationTests using Java 17.0.16 with PID 24366 (started by codespace in /workspaces/location)
+2025-11-23T13:33:21.456Z  INFO 24366 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : No active profile set, falling back to 1 default profile: "default"
+2025-11-23T13:33:22.587Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-23T13:33:22.590Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+2025-11-23T13:33:22.629Z  INFO 24366 --- [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface com.example.softwarepos.repository.PlaceRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2025-11-23T13:33:22.631Z  INFO 24366 --- [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface com.example.softwarepos.repository.ProductRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2025-11-23T13:33:22.632Z  INFO 24366 --- [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface com.example.softwarepos.repository.UserRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2025-11-23T13:33:22.632Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 34 ms. Found 0 JDBC repository interfaces.
+2025-11-23T13:33:22.645Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-23T13:33:22.646Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-11-23T13:33:22.686Z  INFO 24366 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 33 ms. Found 3 JPA repository interfaces.
+2025-11-23T13:33:23.382Z  INFO 24366 --- [    Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-23T13:33:23.472Z  INFO 24366 --- [    Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-11-23T13:33:23.502Z  INFO 24366 --- [    Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-11-23T13:33:23.811Z  INFO 24366 --- [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-11-23T13:33:23.839Z  INFO 24366 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-11-23T13:33:24.396Z  INFO 24366 --- [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2025-11-23T13:33:24.401Z  INFO 24366 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-11-23T13:33:24.494Z  INFO 24366 --- [    Test worker] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
 	Database driver: undefined/unknown
 	Database version: 2.3.232
@@ -38,28 +40,70 @@
 	Isolation level: undefined/unknown
 	Minimum pool size: undefined/unknown
 	Maximum pool size: undefined/unknown
-2025-10-19T07:23:38.817Z  INFO 4165 --- [    Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-23T13:33:25.446Z  INFO 24366 --- [    Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
 Hibernate: 
-    create table users (
+    create table orders (
         id bigint generated by default as identity,
-        email varchar(255),
-        password varchar(255) not null,
-        role varchar(255),
-        username varchar(255) not null,
+        product_image_path varchar(255),
+        prointro varchar(255),
+        proname varchar(255) not null,
+        proprice integer not null,
+        prosub varchar(255),
         primary key (id)
     )
 Hibernate: 
-    alter table if exists users 
-       drop constraint if exists UKr43af9ap4edm43mmtq01oddj6
+    create table place (
+        id bigint generated by default as identity,
+        category varchar(255),
+        comment varchar(255),
+        likes bigint,
+        place_exp varchar(255),
+        placename varchar(255) not null,
+        product_image_path varchar(255),
+        primary key (id)
+    )
+Hibernate: 
+    create table users (
+        id bigint generated by default as identity,
+        role varchar(255),
+        useraddress varchar(255) not null,
+        useremail varchar(255) not null,
+        userid varchar(255) not null,
+        username varchar(255) not null,
+        userphone varchar(255) not null,
+        userpw varchar(255) not null,
+        primary key (id)
+    )
+Hibernate: 
+    alter table if exists orders 
+       drop constraint if exists UKas0gxrque1qe2jt2i9cwxq4p0
+Hibernate: 
+    alter table if exists orders 
+       add constraint UKas0gxrque1qe2jt2i9cwxq4p0 unique (proname)
+Hibernate: 
+    alter table if exists place 
+       drop constraint if exists UKepufpom1wghst8c8i24llqclq
+Hibernate: 
+    alter table if exists place 
+       add constraint UKepufpom1wghst8c8i24llqclq unique (placename)
 Hibernate: 
     alter table if exists users 
-       add constraint UKr43af9ap4edm43mmtq01oddj6 unique (username)
-2025-10-19T07:23:38.916Z  INFO 4165 --- [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2025-10-19T07:23:39.429Z  WARN 4165 --- [    Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2025-10-19T07:23:39.469Z  INFO 4165 --- [    Test worker] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailService
-2025-10-19T07:23:40.242Z  WARN 4165 --- [    Test worker] ion$DefaultTemplateResolverConfiguration : Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
-2025-10-19T07:23:40.445Z  INFO 4165 --- [    Test worker] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:testdb'
-2025-10-19T07:23:40.617Z  INFO 4165 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : Started SoftwareposApplicationTests in 6.495 seconds (process running for 8.507)
+       drop constraint if exists UK4buuuocw4bb4dapogueyiepqn
+Hibernate: 
+    alter table if exists users 
+       add constraint UK4buuuocw4bb4dapogueyiepqn unique (useremail)
+Hibernate: 
+    alter table if exists users 
+       drop constraint if exists UKjyjiwnaabof8kpd0gclhcj2lh
+Hibernate: 
+    alter table if exists users 
+       add constraint UKjyjiwnaabof8kpd0gclhcj2lh unique (userid)
+2025-11-23T13:33:25.541Z  INFO 24366 --- [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-11-23T13:33:26.103Z  WARN 24366 --- [    Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-11-23T13:33:26.127Z  INFO 24366 --- [    Test worker] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailService
+2025-11-23T13:33:26.870Z  WARN 24366 --- [    Test worker] ion$DefaultTemplateResolverConfiguration : Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-11-23T13:33:27.047Z  INFO 24366 --- [    Test worker] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:testdb'
+2025-11-23T13:33:27.245Z  INFO 24366 --- [    Test worker] c.e.s.SoftwareposApplicationTests        : Started SoftwareposApplicationTests in 6.352 seconds (process running for 8.371)
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
