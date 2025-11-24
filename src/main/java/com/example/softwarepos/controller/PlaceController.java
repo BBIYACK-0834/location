@@ -1,5 +1,6 @@
 package com.example.softwarepos.controller;
 
+import com.example.softwarepos.dto.AddPlaceDto;
 import com.example.softwarepos.entity.PlaceEntity;
 import com.example.softwarepos.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.*;
 @RequestMapping("/place")
 @RequiredArgsConstructor
 public class PlaceController {
+
     private final PlaceRepository placeRepository;
 
     // 장소 목록 조회
@@ -23,37 +25,48 @@ public class PlaceController {
         return placeRepository.findAll();
     }
 
-    // 장소 추가 (이미지 업로드 포함)
+    // 장소 추가 (이미지 업로드 + DTO)
     @PostMapping("/add")
     public Map<String, Object> addPlace(
-            @ModelAttribute PlaceEntity placeRequest, 
+            @ModelAttribute AddPlaceDto placeDto,
             @RequestParam(value = "uploadFile", required = false) MultipartFile uploadFile) {
-        
+
         Map<String, Object> result = new HashMap<>();
-        String uploadDir = "/workspaces/AIShop/uploads"; // 업로드 디렉토리
+        String uploadDir = "/workspaces/AIShop/uploads";
 
         File dir = new File(uploadDir);
         if (!dir.exists()) {
-            dir.mkdirs(); // 디렉토리가 없으면 생성
+            dir.mkdirs();
         }
 
         try {
-            // 이미지 파일 처리
+
+            // 새로운 PlaceEntity 생성
+            PlaceEntity place = new PlaceEntity();
+            place.setPlacename(placeDto.getPlacename());
+            place.setPlaceExp(placeDto.getPlaceExp());
+            place.setCategory(placeDto.getCategory());
+            place.setLongitude(placeDto.getLongitude());
+            place.setLatitude(placeDto.getLatitude());
+
+            // 기본값
+            place.setLikes(0L);
+            place.setComment("");
+
+            // 이미지 처리
             if (uploadFile != null && !uploadFile.isEmpty()) {
-                String originalFilename = uploadFile.getOriginalFilename();  // 원본 파일명
-                String uuid = UUID.randomUUID().toString();  // 고유한 UUID 생성
-                String savedFilename = uuid + "_" + originalFilename;  // 고유 파일명
+                String originalFilename = uploadFile.getOriginalFilename();
+                String uuid = UUID.randomUUID().toString();
+                String savedFilename = uuid + "_" + originalFilename;
 
-                // 파일 저장 경로 설정
                 Path filePath = Paths.get(uploadDir, savedFilename);
-                Files.copy(uploadFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);  // 파일 저장
+                Files.copy(uploadFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-                // 이미지 경로를 PlaceEntity에 저장
-                placeRequest.setProductImagePath(savedFilename);
+                place.setProductImagePath(savedFilename);
             }
 
-            // 장소 저장
-            PlaceEntity savedPlace = placeRepository.save(placeRequest);
+            // DB 저장
+            PlaceEntity savedPlace = placeRepository.save(place);
 
             result.put("success", true);
             result.put("message", "장소가 성공적으로 추가되었습니다.");
@@ -62,7 +75,7 @@ public class PlaceController {
         } catch (IOException e) {
             e.printStackTrace();
             result.put("success", false);
-            result.put("message", "장소 추가 중 이미지 파일 처리 오류가 발생했습니다.");
+            result.put("message", "이미지 파일 처리 중 오류가 발생했습니다.");
         }
 
         return result;
@@ -70,18 +83,19 @@ public class PlaceController {
 
     // 장소 수정
     @PutMapping("/update/{id}")
-    public Map<String, Object> updatePlace(@PathVariable Long id, @RequestBody PlaceEntity placeRequest) {
+    public Map<String, Object> updatePlace(@PathVariable Long id, @RequestBody PlaceEntity placeDto) {
         Map<String, Object> result = new HashMap<>();
 
         Optional<PlaceEntity> placeOpt = placeRepository.findById(id);
         if (placeOpt.isPresent()) {
             PlaceEntity place = placeOpt.get();
-            place.setPlacename(placeRequest.getPlacename());
-            place.setPlaceExp(placeRequest.getPlaceExp());
-            place.setCategory(placeRequest.getCategory());
-            place.setLikes(placeRequest.getLikes());
-            place.setComment(placeRequest.getComment());
-            place.setProductImagePath(placeRequest.getProductImagePath());
+
+            place.setPlacename(placeDto.getPlacename());
+            place.setPlaceExp(placeDto.getPlaceExp());
+            place.setCategory(placeDto.getCategory());
+            place.setLongitude(placeDto.getLongitude());
+            place.setLatitude(placeDto.getLatitude());
+            place.setProductImagePath(placeDto.getProductImagePath());
 
             PlaceEntity updatedPlace = placeRepository.save(place);
             result.put("success", true);

@@ -26,9 +26,9 @@ public class PlaceEntity {
     
     private String productImagePath;
     
-    private Long Longitude;
+    private String Longitude;
 
-    private Long Latitude;
+    private String Latitude;
 
 }
 
