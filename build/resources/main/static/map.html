@@ -1,55 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>자동 위치 장소 등록</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>인스타 스타일 (등록 후 이동)</title>
+
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00e9c16d27cc5857e6ce25b69f784aa&libraries=services"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Malgun Gothic', sans-serif; }
-    
-    #map { width: 100%; height: 100vh; }
-
-    /* 메인 장소 등록 버튼 */
-    #registerBtn {
-      position: absolute; top: 20px; left: 20px;
-      padding: 12px 20px; background-color: #4CAF50;
-      color: white; border: none; border-radius: 8px;
-      cursor: pointer; z-index: 2; font-weight: bold; 
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-size: 16px;
-    }
-
-    /* 등록 폼 (모달) */
-    #placeForm {
-      display: none; position: absolute;
-      top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background-color: white; padding: 25px;
-      border-radius: 15px; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
-      z-index: 100; width: 320px; max-height: 90vh; overflow-y: auto;
-    }
-
-    h3 { margin-top: 0; text-align: center; margin-bottom: 20px; color: #333; }
-
-    /* 입력 필드 스타일 */
-    label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 12px; margin-bottom: 4px; }
-    
-    input[type="text"], textarea, input[type="file"] {
-      width: 100%; padding: 10px; box-sizing: border-box;
-      border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
-      background-color: #fff;
-    }
-    
-    input[type="text"]:focus, textarea:focus { border-color: #4CAF50; outline: none; }
-    textarea { resize: vertical; }
-
-    /* 읽기 전용 필드 (좌표) - 로딩 중일 때 색상 변경 */
-    input[readonly] { background-color: #f9f9f9; color: #555; cursor: default; }
-
-    /* 하단 버튼 그룹 */
-    .btn-group { margin-top: 25px; display: flex; gap: 10px; }
-    .btn-group button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; font-size: 15px; }
-    .btn-save { background-color: #4CAF50; }
-    .btn-close { background-color: #888; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fafafa; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
 
     /* 클러스터 마커 */
     .cluster-marker {
@@ -64,124 +25,173 @@
       width: 24px; height: 24px; font-size: 12px; font-weight: bold;
       border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2;
     }
-  </style>
 
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00e9c16d27cc5857e6ce25b69f784aa"></script>
+    /* 메인 카메라 버튼 */
+    #cameraBtn {
+      position: absolute; bottom: 30px; right: 30px;
+      width: 60px; height: 60px; border-radius: 50%;
+      background-color: #3897f0; color: white; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer; z-index: 10;
+    }
+
+    /* 모달 공통 */
+    .modal-container {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: white; z-index: 100; flex-direction: column;
+      animation: slideUp 0.3s ease-out;
+    }
+    #searchModal { z-index: 150; } 
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .nav-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 15px; border-bottom: 1px solid #dbdbdb; background: white;
+      font-weight: 600; font-size: 17px; height: 50px; box-sizing: border-box;
+    }
+    .close-btn { font-size: 24px; cursor: pointer; color: #262626; }
+    .share-btn { color: #3897f0; font-weight: 600; cursor: pointer; font-size: 16px; border: none; background: none; padding: 0; }
+    .share-btn:disabled { opacity: 0.5; }
+
+    /* 작성 폼 */
+    .media-caption-container { display: flex; padding: 15px; border-bottom: 1px solid #dbdbdb; }
+    #previewImage { width: 80px; height: 80px; object-fit: cover; margin-right: 15px; border-radius: 4px; background: #eee; }
+    #captionInput { flex: 1; border: none; resize: none; font-family: inherit; font-size: 15px; outline: none; padding-top: 5px; }
+
+    .option-list { list-style: none; padding: 0; margin: 0; }
+    .option-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px; border-bottom: 1px solid #dbdbdb; cursor: pointer;
+    }
+    .option-item:active { background-color: #f5f5f5; }
+    .option-icon { width: 24px; text-align: center; margin-right: 15px; color: #262626; font-size: 20px; }
+    .option-text-group { display: flex; flex-direction: column; }
+    .option-label { font-size: 16px; color: #262626; }
+    .selected-location { font-size: 13px; color: #3897f0; font-weight: 600; margin-top: 4px; }
+    .option-arrow { color: #dbdbdb; font-size: 18px; }
+
+    /* 위치 검색 */
+    .search-header { padding: 10px; background: #f0f0f0; }
+    .search-input-box {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dbdbdb;
+      font-size: 14px; outline: none; box-sizing: border-box;
+    }
+    #searchResultList { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+    .search-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .search-item:hover { background-color: #fafafa; }
+    .place-name { font-weight: bold; font-size: 15px; color: #262626; margin-bottom: 4px; }
+    .place-addr { font-size: 12px; color: #888; }
+
+    /* 카메라 UI */
+    #cameraInterface {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: black; z-index: 200; flex-direction: column;
+    }
+    #cameraVideo { flex: 1; width: 100%; object-fit: cover; }
+    .camera-controls {
+      height: 100px; display: flex; align-items: center; justify-content: center; position: relative;
+      background: rgba(0,0,0,0.5);
+    }
+    #shutterBtn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid #ddd; cursor: pointer; }
+    .camera-close { position: absolute; top: 20px; left: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 210;}
+
+    #fileInput, #snapshotCanvas { display: none; }
+    #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 300; color: #3897f0; font-size: 40px; }
+  </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<button id="registerBtn" onclick="openFormAndGetGPS()">📍 장소 등록</button>
+<button id="cameraBtn" onclick="handleCameraButtonClick()">
+  <i class="fas fa-camera"></i>
+</button>
 
-<div id="placeForm">
-  <h3>장소 등록</h3>
-  
-  <p style="font-size:12px; color:#666; text-align:center; margin-bottom:15px;">
-    현재 위치를 자동으로 불러옵니다.
-  </p>
+<input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
 
-  <div style="display:flex; gap:10px;">
-    <div style="flex:1;">
-      <label>위도</label>
-      <input type="text" id="placeLat" readonly placeholder="위치 확인 중...">
-    </div>
-    <div style="flex:1;">
-      <label>경도</label>
-      <input type="text" id="placeLng" readonly placeholder="위치 확인 중...">
-    </div>
-  </div>
-
-  <label>장소 이름</label>
-  <input type="text" id="placeName" placeholder="장소 이름을 입력하세요">
-
-  <label>설명</label>
-  <textarea id="placeDesc" rows="3" placeholder="장소에 대한 설명"></textarea>
-
-  <label>카테고리</label>
-  <input type="text" id="placeCategory" placeholder="예: 맛집, 산책로">
-
-  <label>이미지</label>
-  <input type="file" id="placeImage" accept="image/*">
-
-  <div class="btn-group">
-    <button class="btn-save" onclick="registerPlace()">저장</button>
-    <button class="btn-close" onclick="closeForm()">취소</button>
+<div id="cameraInterface">
+  <i class="fas fa-times camera-close" onclick="closeCameraInterface()"></i>
+  <video id="cameraVideo" autoplay playsinline></video>
+  <div class="camera-controls">
+    <div id="shutterBtn" onclick="takeSnapshot()"></div>
   </div>
 </div>
+<canvas id="snapshotCanvas"></canvas>
+
+
+<div id="placeFormModal" class="modal-container">
+  <div class="nav-bar">
+    <i class="fas fa-arrow-left close-btn" onclick="closeFormModal()"></i>
+    <span>새 게시물</span>
+    <button class="share-btn" id="shareBtn" onclick="sharePost()">공유</button>
+  </div>
+
+  <div class="media-caption-container">
+    <img id="previewImage" src="" alt="">
+    <textarea id="captionInput" rows="4" placeholder="문구 입력..."></textarea>
+  </div>
+
+  <ul class="option-list">
+    <li class="option-item" onclick="alert('사람 태그 기능 준비중')">
+      <i class="fas fa-user-tag option-icon"></i>
+      <span class="option-label">사람 태그</span>
+      <i class="fas fa-chevron-right option-arrow"></i>
+    </li>
+    <li class="option-item" onclick="openSearchModal()">
+      <i class="fas fa-map-marker-alt option-icon"></i>
+      <div class="option-text-group">
+        <span class="option-label">위치 추가</span>
+        <span id="selectedLocationName" class="selected-location"></span>
+      </div>
+      <i class="fas fa-chevron-right option-arrow"></i>
+    </li>
+  </ul>
+</div>
+
+
+<div id="searchModal" class="modal-container">
+  <div class="nav-bar">
+    <i class="fas fa-arrow-left close-btn" onclick="closeSearchModal()"></i>
+    <span>위치 검색</span>
+    <div style="width: 30px;"></div>
+  </div>
+  
+  <div class="search-header">
+    <input type="text" id="keyword" class="search-input-box" placeholder="위치 검색 (예: 강남역, 스타벅스)" onkeypress="if(event.keyCode==13) searchPlaces()">
+  </div>
+
+  <ul id="searchResultList">
+    <li style="padding:20px; text-align:center; color:#999; font-size:14px;">검색어를 입력하세요</li>
+  </ul>
+</div>
+
+<div id="loading"><i class="fas fa-spinner fa-spin"></i></div>
+
 
 <script>
-// ----------------------------------------------------
-// 1. 지도 초기화
-// ----------------------------------------------------
-const mapContainer = document.getElementById('map');
-const mapOption = {
-    center: new kakao.maps.LatLng(37.566826, 126.9786567),
-    level: 5 
-};
-
-const map = new kakao.maps.Map(mapContainer, mapOption);
-
+// ==========================================
+// 1. 전역 변수
+// ==========================================
+let map, videoStream = null, selectedImageBlob = null;
 let clusterPositions = []; 
-let clusterOverlays = [];  
-let imageIntervals = [];   
+let clusterOverlays = [];
+let imageIntervals = [];
 
-// ----------------------------------------------------
-// 2. 폼 열기 + GPS 자동 실행 (핵심 로직)
-// ----------------------------------------------------
-function openFormAndGetGPS() {
-    // 1. 폼 열기
-    document.getElementById('placeForm').style.display = 'block';
-    
-    // 2. 기존 값 초기화 (로딩 메시지 표시)
-    document.getElementById('placeName').value = '';
-    document.getElementById('placeDesc').value = '';
-    document.getElementById('placeCategory').value = '';
-    document.getElementById('placeImage').value = '';
-    
-    document.getElementById('placeLat').value = "위치 찾는 중...";
-    document.getElementById('placeLng').value = "위치 찾는 중...";
+// 좌표는 무조건 GPS(자동), 이름은 태그(수동/자동)
+let gpsLat = null; 
+let gpsLng = null;
+let taggedPlaceName = null; 
 
-    // 3. GPS 가져오기 시작
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                // 값 채우기
-                document.getElementById('placeLat').value = lat;
-                document.getElementById('placeLng').value = lng;
-
-                // 지도를 현재 위치로 부드럽게 이동
-                const locPosition = new kakao.maps.LatLng(lat, lng);
-                map.panTo(locPosition);
-            },
-            (err) => {
-                console.error(err);
-                alert("위치를 가져올 수 없습니다.\n위치 권한을 허용해주세요.");
-                document.getElementById('placeLat').value = "실패";
-                document.getElementById('placeLng').value = "실패";
-            },
-            {
-                enableHighAccuracy: true, // 정확도 높임
-                timeout: 5000,            // 5초 안에 못 찾으면 에러
-                maximumAge: 0
-            }
-        );
-    } else {
-        alert("이 브라우저는 GPS를 지원하지 않습니다.");
-    }
-}
-
-function closeForm() {
-    document.getElementById('placeForm').style.display = 'none';
-}
+const mapContainer = document.getElementById('map');
+const mapOption = { center: new kakao.maps.LatLng(37.566826, 126.9786567), level: 5 };
+map = new kakao.maps.Map(mapContainer, mapOption);
+const ps = new kakao.maps.services.Places();
 
 
-// ----------------------------------------------------
-// 3. 클러스터링 로직 (기존 유지)
-// ----------------------------------------------------
+// ==========================================
+// 2. 클러스터링 로직
+// ==========================================
 function averagePosition(positions) {
   let lat = 0, lng = 0;
   positions.forEach(p => { lat += p.getLat(); lng += p.getLng(); });
@@ -200,13 +210,12 @@ function getPixelDistance(map, latlng1, latlng2) {
 function groupClustersByDistance(points) {
   const groups = [];
   const visited = new Set();
-  const THRESHOLD = 80; 
+  const THRESHOLD = 80;
 
   for (let i = 0; i < points.length; i++) {
     if (visited.has(i)) continue;
     const group = [points[i]];
     visited.add(i);
-
     for (let j = i + 1; j < points.length; j++) {
       if (visited.has(j)) continue;
       const d = getPixelDistance(map, points[i].position, points[j].position);
@@ -281,23 +290,20 @@ function onClusterClick(place) {
   newWindow.document.write(`
     <html>
     <head>
-      <title>장소 상세</title>
+      <title>게시물 상세</title>
       <style>
         body { font-family: sans-serif; padding: 20px; text-align: center; }
         img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
         h2 { margin-bottom: 5px; color: #333; }
-        .cate { color: #888; font-size: 14px; margin-bottom: 20px; display: inline-block; background: #eee; padding: 4px 8px; border-radius: 4px; }
         .desc { text-align: left; background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; }
-        p { color: #aaa; font-size: 12px; margin-top: 10px; }
         button { margin-top: 20px; padding: 10px 20px; cursor: pointer; }
       </style>
     </head>
     <body>
       <img src="${displayImg}" />
-      <h2>${place.name || '이름 없는 장소'}</h2>
-      <span class="cate">${place.category || '카테고리 없음'}</span>
+      <h2>${place.name || '제목 없음'}</h2>
       <div class="desc">${place.desc || '설명이 없습니다.'}</div>
-      <p>위도: ${place.position.getLat()}, 경도: ${place.position.getLng()}</p>
+      <p style="color:#aaa; font-size:12px;">좌표(GPS): ${place.position.getLat().toFixed(4)}, ${place.position.getLng().toFixed(4)}</p>
       <button onclick="window.close()">닫기</button>
     </body>
     </html>
@@ -305,66 +311,228 @@ function onClusterClick(place) {
 }
 
 
-// ----------------------------------------------------
-// 4. 서버 등록
-// ----------------------------------------------------
-function registerPlace() {
-  const name = document.getElementById('placeName').value;
-  const desc = document.getElementById('placeDesc').value;
-  const category = document.getElementById('placeCategory').value;
-  const lat = document.getElementById('placeLat').value;
-  const lng = document.getElementById('placeLng').value;
-  const file = document.getElementById('placeImage').files[0];
+// ==========================================
+// 3. 카메라/파일 처리 + [GPS 자동 실행]
+// ==========================================
+async function handleCameraButtonClick() {
+  
+  // 카메라 켜짐과 동시에 GPS 확보 시작
+  getCurrentLocation();
 
-  if (lat === "위치 찾는 중..." || lat === "실패") {
-    alert("위치 정보를 불러오는 중이거나 실패했습니다.\n잠시 후 다시 시도해주세요.");
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.getElementById('cameraVideo');
+      video.srcObject = videoStream;
+      document.getElementById('cameraInterface').style.display = 'flex';
+    } catch (err) {
+      document.getElementById('fileInput').click();
+    }
+  } else {
+    document.getElementById('fileInput').click();
+  }
+}
+
+function handleFileSelect(event) {
+  getCurrentLocation(); // GPS 확보 시작
+
+  const file = event.target.files[0];
+  if (file) {
+    selectedImageBlob = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('previewImage').src = e.target.result;
+      openFormModal();
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// GPS 위치 가져오는 함수
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        gpsLat = position.coords.latitude;
+        gpsLng = position.coords.longitude;
+        console.log("GPS 확보 완료:", gpsLat, gpsLng);
+        
+        // 폼이 열려있고, 태그된 이름이 없다면 '현재 위치'라고 살짝 보여주기
+        if(document.getElementById('placeFormModal').style.display === 'flex' && !taggedPlaceName) {
+             document.getElementById('selectedLocationName').textContent = "현재 위치";
+             document.getElementById('selectedLocationName').style.color = "#999";
+        }
+      },
+      (err) => {
+        console.warn("GPS 실패:", err);
+      },
+      { enableHighAccuracy: true }
+    );
+  }
+}
+
+function closeCameraInterface() {
+  if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+  document.getElementById('cameraInterface').style.display = 'none';
+}
+function takeSnapshot() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('snapshotCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob((blob) => {
+    selectedImageBlob = blob;
+    document.getElementById('previewImage').src = URL.createObjectURL(blob);
+    closeCameraInterface();
+    openFormModal();
+  }, 'image/jpeg', 0.9);
+}
+
+
+// ==========================================
+// 4. 모달 제어
+// ==========================================
+function openFormModal() {
+  document.getElementById('placeFormModal').style.display = 'flex';
+  document.getElementById('cameraBtn').style.display = 'none';
+  
+  if (!taggedPlaceName && gpsLat) {
+      document.getElementById('selectedLocationName').textContent = "현재 위치";
+      document.getElementById('selectedLocationName').style.color = "#999";
+  }
+}
+
+function closeFormModal() {
+  document.getElementById('placeFormModal').style.display = 'none';
+  document.getElementById('cameraBtn').style.display = 'flex';
+  
+  document.getElementById('captionInput').value = '';
+  document.getElementById('previewImage').src = '';
+  document.getElementById('selectedLocationName').textContent = '';
+  document.getElementById('selectedLocationName').style.color = "#3897f0"; 
+  
+  taggedPlaceName = null;
+}
+
+function openSearchModal() {
+  document.getElementById('searchModal').style.display = 'flex';
+  document.getElementById('keyword').focus();
+}
+
+function closeSearchModal() {
+  document.getElementById('searchModal').style.display = 'none';
+  document.getElementById('keyword').value = '';
+  document.getElementById('searchResultList').innerHTML = '';
+}
+
+function searchPlaces() {
+  const keyword = document.getElementById('keyword').value.trim();
+  if (!keyword) { alert('키워드를 입력해주세요!'); return; }
+  ps.keywordSearch(keyword, placesSearchCB);
+}
+
+function placesSearchCB(data, status) {
+  const listEl = document.getElementById('searchResultList');
+  listEl.innerHTML = '';
+
+  if (status === kakao.maps.services.Status.OK) {
+    data.forEach((place) => {
+      const item = document.createElement('li');
+      item.className = 'search-item';
+      item.innerHTML = `
+        <div class="place-name">${place.place_name}</div>
+        <div class="place-addr">${place.road_address_name || place.address_name}</div>
+      `;
+      // [이름만 사용]
+      item.onclick = () => { selectPlace(place.place_name); };
+      listEl.appendChild(item);
+    });
+  } else {
+    listEl.innerHTML = '<li style="padding:20px; text-align:center;">결과가 없습니다.</li>';
+  }
+}
+
+function selectPlace(name) {
+  taggedPlaceName = name; // 이름만 저장
+  
+  // UI 업데이트
+  const label = document.getElementById('selectedLocationName');
+  label.textContent = name;
+  label.style.color = "#3897f0"; 
+
+  closeSearchModal();
+}
+
+
+// ==========================================
+// 5. 공유 (GPS 좌표 + 선택된 이름)
+// ==========================================
+function sharePost() {
+  const caption = document.getElementById('captionInput').value;
+
+  if (!selectedImageBlob) { alert("이미지가 없습니다."); return; }
+  if (!gpsLat || !gpsLng) {
+    alert("현재 위치(GPS)를 확보하지 못했습니다.\n잠시 후 다시 시도해주세요.");
     return;
   }
-  if (!name || !desc) {
-    alert("장소 이름과 설명을 입력해주세요.");
-    return;
-  }
+
+  const shareBtn = document.getElementById('shareBtn');
+  shareBtn.disabled = true;
+  shareBtn.textContent = '공유 중...';
+  document.getElementById('loading').style.display = 'block';
+
+  // [데이터 전송 로직]
+  const finalName = taggedPlaceName || "이름 없는 장소";
 
   const formData = new FormData();
-  formData.append("placename", name);
-  formData.append("placeExp", desc);
-  formData.append("category", category);
-  formData.append("latitude", lat);
-  formData.append("longitude", lng);
-  if (file) formData.append("uploadFile", file);
+  formData.append("placename", finalName);
+  formData.append("placeExp", caption);
+  formData.append("latitude", gpsLat);  // 무조건 GPS 좌표
+  formData.append("longitude", gpsLng); // 무조건 GPS 좌표
+  formData.append("uploadFile", selectedImageBlob, "image.jpg");
 
   fetch("https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/place/add", {
-    method: "POST",
-    body: formData
+      method: "POST",
+      body: formData
   })
   .then(res => res.json())
   .then(data => {
-    // 성공 시 처리
-    if (true) { 
-      alert("장소가 등록되었습니다!");
-      closeForm();
+      if (true) {
+          alert("게시물이 등록되었습니다!");
+          closeFormModal();
+          
+          // 클러스터 데이터 추가
+          clusterPositions.push({
+            position: new kakao.maps.LatLng(gpsLat, gpsLng),
+            imageSrc: URL.createObjectURL(selectedImageBlob),
+            name: finalName,
+            desc: caption,
+            count: 1
+          });
 
-      clusterPositions.push({
-        position: new kakao.maps.LatLng(Number(lat), Number(lng)),
-        imageSrc: file ? URL.createObjectURL(file) : "https://via.placeholder.com/100",
-        name: name,         
-        desc: desc,        
-        category: category, 
-        count: 1
-      });
-
-      renderClusters(); 
-      map.panTo(new kakao.maps.LatLng(Number(lat), Number(lng)));
-    }
+          renderClusters();
+          
+          // [추가됨] 등록된 위치로 지도 중심 이동
+          map.panTo(new kakao.maps.LatLng(gpsLat, gpsLng));
+      }
   })
   .catch(err => {
-    console.error(err);
-    alert("오류 발생 (콘솔 확인)");
+      console.error(err);
+      alert("오류 발생");
+  })
+  .finally(() => {
+      shareBtn.disabled = false;
+      shareBtn.textContent = '공유';
+      document.getElementById('loading').style.display = 'none';
   });
 }
 
+// ==========================================
+// 6. 이벤트 리스너
+// ==========================================
 kakao.maps.event.addListener(map, 'zoom_changed', renderClusters);
-kakao.maps.event.addListener(map, 'dragend', renderClusters);
+
 
 </script>
 </body>
