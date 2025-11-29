@@ -90,7 +90,7 @@
     <i class="fas fa-camera"></i>
   </button>
 
-  <div class="nav-item" onclick="alert('마이페이지 기능 준비중')">
+  <div class="nav-item" onclick="location.href='mypage.html'">
     <i class="far fa-user"></i>
   </div>
 </div>
@@ -483,6 +483,14 @@ function sharePost() {
   formData.append("latitude", gpsLat);  
   formData.append("longitude", gpsLng);
   formData.append("uploadFile", selectedImageBlob, "image.jpg");
+  const myEmail = localStorage.getItem("userEmail");
+  if (myEmail) {
+      formData.append("uploaderEmail", myEmail); // ★ DTO 변수명과 일치해야 함
+  } else {
+      alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+      location.href = "login.html";
+      return; // 전송 중단
+  }
 
   fetch("https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/place/add", {
       method: "POST",

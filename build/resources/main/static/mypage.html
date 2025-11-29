@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이페이지 (클러스터)</title>
+  
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00e9c16d27cc5857e6ce25b69f784aa&libraries=services"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fafafa;
+      margin: 0; padding: 0;
+      padding-bottom: 60px;
+      height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* 프로필 헤더 */
+    .profile-header { background: white; padding: 20px; border-bottom: 1px solid #dbdbdb; flex-shrink: 0; }
+    .profile-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+    .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 1px solid #dbdbdb; margin-right: 20px; }
+    .stats-container { display: flex; flex: 1; justify-content: space-around; text-align: center; }
+    .stat-box { display: flex; flex-direction: column; }
+    .stat-num { font-weight: bold; font-size: 18px; color: #262626; }
+    .stat-label { font-size: 12px; color: #262626; }
+    .profile-info { margin-bottom: 15px; }
+    .nickname-id { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+    .bio { font-size: 14px; color: #262626; white-space: pre-wrap; }
+    .btn-group { display: flex; gap: 10px; }
+    .profile-btn { flex: 1; background-color: #efefef; border: 1px solid #dbdbdb; padding: 6px 0; border-radius: 4px; font-weight: 600; font-size: 14px; cursor: pointer; text-align: center; color: #262626; }
+
+    /* 지도 컨테이너 */
+    .map-container-box { flex: 1; background: white; position: relative; border-top: 1px solid #dbdbdb; }
+    .map-title { padding: 10px 15px; font-weight: bold; color: #262626; font-size: 14px; border-bottom: 1px solid #eee; background: #fff; }
+    #myMap { width: 100%; height: 100%; }
+
+    /* ★ 클러스터 마커 스타일 (map.html과 동일) ★ */
+    .cluster-marker {
+      position: relative; background: white; border-radius: 50%;
+      width: 60px; height: 60px; overflow: hidden;
+      border: 3px solid #4CAF50; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;
+    }
+    .cluster-marker img { width: 100%; height: 100%; object-fit: cover; }
+    .cluster-count {
+      position: absolute; bottom: 0; right: 0; background-color: red; color: white;
+      width: 24px; height: 24px; font-size: 12px; font-weight: bold;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2;
+    }
+
+    /* 하단 네비게이션 */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #dbdbdb; display: flex; align-items: center; justify-content: space-around; z-index: 50; }
+    .nav-item { font-size: 24px; color: #262626; cursor: pointer; padding: 10px; }
+    .nav-item.active { color: #3897f0; }
+  </style>
+</head>
+<body>
+
+<div class="profile-header">
+  <div class="profile-top">
+    <img id="profileImg" src="https://via.placeholder.com/150" class="profile-img">
+    <div class="stats-container">
+      <div class="stat-box"><span class="stat-num" id="postCount">0</span><span class="stat-label">게시물</span></div>
+      <div class="stat-box"><span class="stat-num" id="followerCount">0</span><span class="stat-label">팔로워</span></div>
+      <div class="stat-box"><span class="stat-num" id="followingCount">0</span><span class="stat-label">팔로잉</span></div>
+    </div>
+  </div>
+  <div class="profile-info">
+    <div class="nickname-id" id="nicknameId">username</div>
+    <div class="bio" id="introduction">자기소개가 없습니다.</div>
+  </div>
+  <div class="btn-group">
+    <button class="profile-btn" onclick="alert('준비중')">프로필 편집</button>
+    <button class="profile-btn" onclick="logout()">로그아웃</button>
+  </div>
+</div>
+
+<div class="map-container-box">
+  <div class="map-title"><i class="fas fa-map-marked-alt"></i> 내 발자취</div>
+  <div id="myMap"></div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item" onclick="location.href='map.html'"><i class="fas fa-home"></i></div>
+  <div class="nav-item" onclick="location.href='search.html'"><i class="fas fa-search"></i></div>
+  <div class="nav-item active"><i class="fas fa-user"></i></div>
+</div>
+
+<script>
+  const BASE_URL = "https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev";
+  const myEmail = localStorage.getItem("userEmail");
+  
+  let map;
+  // 클러스터링 변수들
+  let clusterPositions = []; 
+  let clusterOverlays = [];
+  let imageIntervals = [];
+
+  window.onload = function() {
+    if (!myEmail) {
+      alert("로그인이 필요합니다.");
+      location.href = "login.html";
+      return;
+    }
+    initMap(); 
+    loadProfileData(); 
+  };
+
+  function initMap() {
+    const container = document.getElementById('myMap');
+    const options = {
+      center: new kakao.maps.LatLng(37.5665, 126.9780),
+      level: 8
+    };
+    map = new kakao.maps.Map(container, options);
+    
+    // 줌 변경 시 클러스터 재계산
+    kakao.maps.event.addListener(map, 'zoom_changed', renderClusters);
+  }
+
+  async function loadProfileData() {
+    try {
+      const res = await fetch(`${BASE_URL}/user/profile/${myEmail}`);
+      const data = await res.json();
+
+      // 정보 채우기
+      document.getElementById("nicknameId").innerText = data.nicknameId || data.nickname;
+      document.getElementById("introduction").innerText = data.introduction || "";
+      document.getElementById("postCount").innerText = data.postCount;
+      document.getElementById("followerCount").innerText = data.followerCount;
+      document.getElementById("followingCount").innerText = data.followingCount;
+      if (data.profileImage) document.getElementById("profileImg").src = data.profileImage;
+
+      // ★ 데이터 변환 (백엔드 데이터 -> 클러스터용 포맷)
+      if (data.myPosts && data.myPosts.length > 0) {
+        
+        // 1. clusterPositions 배열에 데이터 채워넣기
+        clusterPositions = data.myPosts
+            .filter(post => post.latitude && post.longitude)
+            .map(post => ({
+                position: new kakao.maps.LatLng(post.latitude, post.longitude),
+                // 이미지는 blob URL이 아니라 경로이므로 그대로 사용 (필요시 /images/ 추가)
+                imageSrc: post.productImage ? `/images/${post.productImage}` : 'https://via.placeholder.com/100',
+                name: "내 게시물", // 마이페이지에선 제목이 딱히 안 와서 고정
+                desc: "",
+                count: 1
+            }));
+
+        // 2. 클러스터 렌더링 실행
+        renderClusters();
+
+        // 3. 마커들이 보이도록 지도 범위 재설정
+        const bounds = new kakao.maps.LatLngBounds();
+        clusterPositions.forEach(p => bounds.extend(p.position));
+        map.setBounds(bounds);
+        
+      } else {
+        console.log("표시할 게시물이 없습니다.");
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // ==========================================
+  // 👇 여기부터 클러스터링 알고리즘 (map.html과 동일)
+  // ==========================================
+  function averagePosition(positions) {
+    let lat = 0, lng = 0;
+    positions.forEach(p => { lat += p.getLat(); lng += p.getLng(); });
+    return new kakao.maps.LatLng(lat / positions.length, lng / positions.length);
+  }
+
+  function getPixelDistance(map, latlng1, latlng2) {
+    const proj = map.getProjection();
+    const p1 = proj.pointFromCoords(latlng1);
+    const p2 = proj.pointFromCoords(latlng2);
+    const dx = p1.x - p2.x;
+    const dy = p1.y - p2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function groupClustersByDistance(points) {
+    const groups = [];
+    const visited = new Set();
+    const THRESHOLD = 80;
+
+    for (let i = 0; i < points.length; i++) {
+      if (visited.has(i)) continue;
+      const group = [points[i]];
+      visited.add(i);
+      for (let j = i + 1; j < points.length; j++) {
+        if (visited.has(j)) continue;
+        const d = getPixelDistance(map, points[i].position, points[j].position);
+        if (d < THRESHOLD) {
+          group.push(points[j]);
+          visited.add(j);
+        }
+      }
+      groups.push(group);
+    }
+    return groups;
+  }
+
+  function renderClusters() {
+    // 초기화
+    clusterOverlays.forEach(o => o.setMap(null));
+    clusterOverlays = [];
+    imageIntervals.forEach(i => clearInterval(i));
+    imageIntervals = [];
+
+    if (clusterPositions.length === 0) return;
+
+    let groups;
+    if (map.getLevel() > 7) {
+      groups = groupClustersByDistance(clusterPositions);
+    } else {
+      groups = clusterPositions.map(c => [c]);
+    }
+
+    groups.forEach(group => {
+      const pos = averagePosition(group.map(g => g.position));
+      const content = document.createElement('div');
+      content.className = 'cluster-marker';
+
+      const img = document.createElement('img');
+      img.src = group[0].imageSrc;
+      content.appendChild(img);
+
+      if (group.length > 1) {
+        const count = document.createElement('div');
+        count.className = 'cluster-count';
+        count.textContent = group.length;
+        content.appendChild(count);
+      }
+
+      // 이미지 회전 애니메이션
+      let currentIndex = 0;
+      if (group.length > 1) {
+        const interval = setInterval(() => {
+          currentIndex = (currentIndex + 1) % group.length;
+          img.src = group[currentIndex].imageSrc;
+        }, 1500);
+        imageIntervals.push(interval);
+      }
+
+      const overlay = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: content,
+        yAnchor: 1
+      });
+
+      overlay.setMap(map);
+      clusterOverlays.push(overlay);
+      
+      // 클릭 시 확대 등의 동작 추가 가능
+      content.addEventListener('click', () => {
+         // 마이페이지니까 클릭하면 지도를 확대해줄까요?
+         map.setLevel(map.getLevel() - 2, {animate: true});
+         map.panTo(pos);
+      });
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem("userEmail");
+    location.href = "login.html";
+  }
+</script>
+
+</body>
+</html>

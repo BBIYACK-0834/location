@@ -2,145 +2,270 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>아이디 / 비밀번호 찾기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 문제 해결</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fafafa;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       height: 100vh;
       margin: 0;
-      padding-top: 40px;
     }
     .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      width: 400px;
-    }
-    h2 {
+      background: #fff;
+      padding: 40px;
+      border: 1px solid #dbdbdb;
+      border-radius: 1px;
+      width: 320px;
       text-align: center;
+    }
+    .icon-lock {
+      font-size: 50px;
+      color: #262626;
       margin-bottom: 20px;
-      color: #333;
+      display: inline-block;
+      padding: 15px;
+      border: 2px solid #262626;
+      border-radius: 50%;
+      width: 50px; height: 50px;
+      line-height: 50px;
     }
-    label {
-      display: block;
-      margin-top: 15px;
-      color: #444;
-    }
+    h2 { margin: 10px 0; font-size: 18px; color: #262626; }
+    p { color: #8e8e8e; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    
     input {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #dbdbdb;
+      border-radius: 3px;
+      background: #fafafa;
+      box-sizing: border-box;
+      font-size: 14px;
     }
     button {
       width: 100%;
       padding: 10px;
-      border: none;
-      border-radius: 5px;
-      background: #007bff;
+      background: #3897f0;
       color: white;
-      font-size: 15px;
-      margin-top: 15px;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .result {
-      margin-top: 15px;
-      background: #eef;
-      padding: 10px;
-      border-radius: 5px;
-      min-height: 40px;
+      font-weight: bold;
       font-size: 14px;
+      margin-top: 10px;
     }
+    button:hover { background: #2880d6; }
+    button:disabled { background: #b2dffc; cursor: default; }
+
+    .result-message {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #ed4956;
+      min-height: 20px;
+    }
+    
+    .divider {
+      margin: 30px 0;
+      height: 1px;
+      background-color: #dbdbdb;
+      position: relative;
+    }
+    .divider span {
+      position: absolute;
+      top: -10px; left: 50%; transform: translateX(-50%);
+      background: #fff;
+      padding: 0 10px;
+      color: #8e8e8e;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .back-login {
+      color: #262626;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 600;
+      background: #fafafa;
+      border: 1px solid #dbdbdb;
+      padding: 10px;
+      display: block;
+      width: 320px;
+      text-align: center;
+      box-sizing: border-box;
+      margin-top: 10px;
+    }
+    
+    /* 단계별 화면 제어 */
+    .step-section { display: none; }
+    .step-section.active { display: block; }
   </style>
 </head>
 <body>
-<div class="container">
-  <h2>아이디 / 비밀번호 찾기</h2>
 
-  <!-- 아이디 찾기 -->
-  <h3>아이디 찾기</h3>
-  <label>이메일</label>
-  <input type="email" id="findEmail" placeholder="가입 시 사용한 이메일 입력">
-  <button onclick="findId()">아이디 찾기 (인증코드 전송)</button>
-  <div id="findIdResult" class="result"></div>
+<div>
+  <div class="container">
+    <div class="icon-lock"><i class="fas fa-lock"></i></div>
+    
+    <div id="step1" class="step-section active">
+      <h2>로그인에 문제가 있나요?</h2>
+      <p>이메일 주소(아이디)와 닉네임ID를 입력하시면<br>비밀번호 재설정 코드를 보내드립니다.</p>
+      
+      <input type="email" id="findEmail" placeholder="이메일 (아이디)">
+      <input type="text" id="findNicknameId" placeholder="닉네임 ID (본인 확인용)">
+      <button onclick="requestVerificationCode()" id="btnStep1">인증 코드 받기</button>
+    </div>
 
-  <!-- 비밀번호 찾기 -->
-  <h3 style="margin-top:30px;">비밀번호 찾기</h3>
-  <label>아이디</label>
-  <input type="text" id="pwUserid" placeholder="아이디 입력">
-  <label>이메일</label>
-  <input type="email" id="pwEmail" placeholder="가입 시 이메일 입력">
-  <button onclick="findPassword()">비밀번호 찾기 (인증코드 전송)</button>
+    <div id="step2" class="step-section">
+      <h2>인증 코드 입력</h2>
+      <p>이메일로 전송된 6자리 코드를 입력해주세요.</p>
+      
+      <input type="text" id="verifyCodeInput" placeholder="인증 코드 6자리">
+      <button onclick="verifyCode()" id="btnStep2">코드 확인</button>
+    </div>
 
-  <label>인증 코드</label>
-  <input type="text" id="verifyCode" placeholder="이메일로 받은 인증코드 입력">
-  <button onclick="verifyCode()">코드 확인</button>
+    <div id="step3" class="step-section">
+      <h2>새 비밀번호 설정</h2>
+      <p>새로 사용할 비밀번호를 입력해주세요.</p>
+      
+      <input type="password" id="newPassword" placeholder="새 비밀번호">
+      <input type="password" id="confirmNewPassword" placeholder="새 비밀번호 확인">
+      <button onclick="resetPassword()" id="btnStep3">비밀번호 변경</button>
+    </div>
 
-  <label>새 비밀번호</label>
-  <input type="password" id="newPw" placeholder="새 비밀번호 입력">
-  <button onclick="resetPassword()">비밀번호 재설정</button>
+    <div id="resultMessage" class="result-message"></div>
 
-  <div id="pwResult" class="result"></div>
+    <div class="divider"><span>OR</span></div>
+    
+    <a href="signup.html" style="text-decoration:none; color:#262626; font-weight:600; font-size:14px;">새 계정 만들기</a>
+  </div>
+
+  <a href="login.html" class="back-login">로그인으로 돌아가기</a>
 </div>
 
 <script>
-  const BASE_URL = "https://scaling-rotary-phone-gppj7946w4jc9wj-8080.app.github.dev";
+  const BASE_URL = "https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev";
+  const msgDiv = document.getElementById("resultMessage");
+  
+  // 상태 저장을 위한 변수
+  let verifiedEmail = "";
 
-  async function findId() {
-    const email = document.getElementById("findEmail").value;
-    const res = await fetch(`${BASE_URL}/user/find-id`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    document.getElementById("findIdResult").innerText = data.message || JSON.stringify(data);
+  // 유틸: 메시지 표시
+  function showMessage(text, isError = true) {
+    msgDiv.textContent = text;
+    msgDiv.style.color = isError ? "#ed4956" : "#3897f0";
   }
 
-  async function findPassword() {
-    const userid = document.getElementById("pwUserid").value;
-    const email = document.getElementById("pwEmail").value;
-    const res = await fetch(`${BASE_URL}/find-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userid, email })
-    });
-    const data = await res.json();
-    document.getElementById("pwResult").innerText = data.message || JSON.stringify(data);
+  // [1단계] 인증 코드 요청
+  async function requestVerificationCode() {
+    const email = document.getElementById("findEmail").value.trim();
+    const nicknameId = document.getElementById("findNicknameId").value.trim();
+
+    if (!email || !nicknameId) {
+      showMessage("이메일과 닉네임 ID를 모두 입력해주세요.");
+      return;
+    }
+
+    const btn = document.getElementById("btnStep1");
+    btn.disabled = true;
+    btn.textContent = "전송 중...";
+
+    try {
+      // UserController의 find-password 엔드포인트 호출
+      const res = await fetch(`${BASE_URL}/user/find-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, nicknameId: nicknameId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showMessage("인증 코드가 전송되었습니다.", false);
+        verifiedEmail = email; // 다음 단계를 위해 이메일 저장
+        
+        // 화면 전환 (Step 1 -> Step 2)
+        document.getElementById("step1").classList.remove("active");
+        document.getElementById("step2").classList.add("active");
+      } else {
+        showMessage(data.message || "계정을 찾을 수 없습니다.");
+      }
+    } catch (err) {
+      console.error(err);
+      showMessage("서버 통신 오류가 발생했습니다.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "인증 코드 받기";
+    }
   }
 
+  // [2단계] 코드 검증
   async function verifyCode() {
-    const email = document.getElementById("pwEmail").value;
-    const code = document.getElementById("verifyCode").value;
-    const res = await fetch(`${BASE_URL}/verify-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code })
-    });
-    const data = await res.json();
-    document.getElementById("pwResult").innerText = data.message;
+    const code = document.getElementById("verifyCodeInput").value.trim();
+    if (!code) {
+      showMessage("인증 코드를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/user/verify-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: verifiedEmail, code: code })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showMessage("인증되었습니다. 새 비밀번호를 설정하세요.", false);
+        
+        // 화면 전환 (Step 2 -> Step 3)
+        document.getElementById("step2").classList.remove("active");
+        document.getElementById("step3").classList.add("active");
+      } else {
+        showMessage(data.message || "인증 코드가 올바르지 않습니다.");
+      }
+    } catch (err) {
+      showMessage("서버 오류 발생");
+    }
   }
 
+  // [3단계] 비밀번호 재설정
   async function resetPassword() {
-    const userid = document.getElementById("pwUserid").value;
-    const newPassword = document.getElementById("newPw").value;
-    const res = await fetch(`${BASE_URL}/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userid, newPassword })
-    });
-    const data = await res.json();
-    document.getElementById("pwResult").innerText = data.message;
+    const newPw = document.getElementById("newPassword").value.trim();
+    const confirmPw = document.getElementById("confirmNewPassword").value.trim();
+
+    if (!newPw || !confirmPw) {
+      showMessage("새 비밀번호를 입력해주세요.");
+      return;
+    }
+    if (newPw !== confirmPw) {
+      showMessage("비밀번호가 서로 일치하지 않습니다.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/user/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // UserController의 reset-password는 { email, newPassword }를 받도록 수정했었음 (userid -> email)
+        body: JSON.stringify({ email: verifiedEmail, newPassword: newPw })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("비밀번호가 변경되었습니다. 로그인해주세요.");
+        window.location.href = "login.html";
+      } else {
+        showMessage(data.message || "비밀번호 변경 실패");
+      }
+    } catch (err) {
+      showMessage("서버 오류 발생");
+    }
   }
 </script>
+
 </body>
 </html>

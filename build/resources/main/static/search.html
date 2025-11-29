@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>검색 및 팔로우</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fafafa;
+      margin: 0; padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* === 상단 검색바 === */
+    .search-container {
+      position: sticky; top: 0; background: white;
+      padding: 15px; border-bottom: 1px solid #dbdbdb;
+      z-index: 10;
+    }
+    .search-box {
+      display: flex; background: #efefef; border-radius: 8px; padding: 0 10px;
+      align-items: center;
+    }
+    .search-box i { color: #8e8e8e; margin-right: 10px; }
+    .search-box input {
+      border: none; background: transparent; padding: 10px 0; width: 100%;
+      font-size: 14px; outline: none;
+    }
+
+    /* === 유저 리스트 === */
+    .user-list {
+      list-style: none; padding: 0; margin: 0 0 60px 0; /* 하단 바 공간 확보 */
+      background: white;
+    }
+    .user-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 15px;
+    }
+    .user-info { display: flex; align-items: center; }
+    
+    .user-img {
+      width: 44px; height: 44px; border-radius: 50%;
+      object-fit: cover; margin-right: 12px; border: 1px solid #eee;
+    }
+    .text-box { display: flex; flex-direction: column; }
+    .nickname-id { font-weight: 600; font-size: 14px; color: #262626; }
+    .nickname-real { font-size: 13px; color: #8e8e8e; margin-top: 2px; }
+
+    /* === 팔로우 버튼 스타일 === */
+    .btn-follow {
+      border: none; border-radius: 4px; padding: 6px 16px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    /* 팔로우 안 한 상태 (파란색) */
+    .btn-follow.blue {
+      background-color: #3897f0; color: white;
+    }
+    /* 이미 팔로우 한 상태 (회색) */
+    .btn-follow.gray {
+      background-color: #efefef; color: #262626; border: 1px solid #dbdbdb;
+    }
+
+    /* === 하단 네비게이션 (공통) === */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+      background: white; border-top: 1px solid #dbdbdb;
+      display: flex; align-items: center; justify-content: space-around;
+      z-index: 50;
+    }
+    .nav-item { font-size: 24px; color: #262626; cursor: pointer; padding: 10px; }
+    .nav-item.active { color: #3897f0; } /* 현재 페이지 활성 표시 */
+  </style>
+</head>
+<body>
+
+<div class="search-container">
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="keyword" placeholder="검색" onkeypress="if(event.key==='Enter') searchUsers()">
+  </div>
+</div>
+
+<ul class="user-list" id="userList">
+  <li style="padding:20px; text-align:center; color:#999; font-size:14px;">
+    친구를 찾아보세요.
+  </li>
+</ul>
+
+<div class="bottom-nav">
+  <div class="nav-item" onclick="location.href='map.html'"><i class="fas fa-home"></i></div>
+  <div class="nav-item active"><i class="fas fa-search"></i></div> <div class="nav-item" onclick="alert('마이페이지 준비중')"><i class="far fa-user"></i></div>
+</div>
+
+<script>
+  const BASE_URL = "https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev";
+  const myEmail = localStorage.getItem("userEmail"); // 로그인할 때 저장한 내 이메일 가져오기
+
+  // 1. 유저 검색 함수
+  async function searchUsers() {
+    const keyword = document.getElementById("keyword").value.trim();
+    if (!keyword) return;
+    if (!myEmail) { alert("로그인이 필요합니다."); location.href = 'login.html'; return; }
+
+    try {
+      // API 호출 (내 이메일도 같이 보내서 '나 자신'은 검색에서 뺌)
+      const res = await fetch(`${BASE_URL}/follow/search?keyword=${keyword}&myEmail=${myEmail}`);
+      const users = await res.json();
+      
+      renderList(users);
+    } catch (err) {
+      console.error(err);
+      alert("검색 중 오류 발생");
+    }
+  }
+
+  // 2. 리스트 그리기
+  async function renderList(users) {
+    const listEl = document.getElementById("userList");
+    listEl.innerHTML = "";
+
+    if (users.length === 0) {
+      listEl.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">검색 결과가 없습니다.</li>';
+      return;
+    }
+
+    for (const user of users) {
+      // 중요: 각 유저별로 내가 팔로우 중인지 확인 (비동기)
+      const isFollowing = await checkFollowStatus(user.email);
+
+      const li = document.createElement("li");
+      li.className = "user-item";
+      
+      // 프로필 이미지가 없으면 기본 이미지 사용
+      const profileImg = user.profileImage || "https://via.placeholder.com/100";
+
+      li.innerHTML = `
+        <div class="user-info">
+          <img src="${profileImg}" class="user-img">
+          <div class="text-box">
+            <span class="nickname-id">${user.nicknameId}</span>
+            <span class="nickname-real">${user.nickname}</span>
+          </div>
+        </div>
+        <button class="btn-follow ${isFollowing ? 'gray' : 'blue'}" 
+                onclick="toggleFollow('${user.email}', this)">
+          ${isFollowing ? '팔로잉' : '팔로우'}
+        </button>
+      `;
+      listEl.appendChild(li);
+    }
+  }
+
+  // 3. 팔로우 상태 확인 API
+  async function checkFollowStatus(targetEmail) {
+    try {
+      const res = await fetch(`${BASE_URL}/follow/check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            followerEmail: myEmail,   // DTO 필드명 매칭
+            followingEmail: targetEmail 
+        })
+      });
+      return await res.json(); // true or false 리턴
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // 4. 팔로우/언팔로우 토글 기능
+  async function toggleFollow(targetEmail, btn) {
+    try {
+      const res = await fetch(`${BASE_URL}/follow/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            followerEmail: myEmail, 
+            followingEmail: targetEmail 
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // 성공 시 버튼 스타일 즉시 변경 (UX 향상)
+        if (data.status === "followed") {
+          // 팔로우 성공 -> 회색 버튼(팔로잉)으로 변경
+          btn.className = "btn-follow gray";
+          btn.innerText = "팔로잉";
+        } else {
+          // 언팔로우 성공 -> 파란 버튼(팔로우)으로 변경
+          btn.className = "btn-follow blue";
+          btn.innerText = "팔로우";
+        }
+      }
+    } catch (err) {
+      alert("처리 중 오류 발생");
+    }
+  }
+</script>
+
+</body>
+</html>

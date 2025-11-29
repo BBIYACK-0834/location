@@ -29,6 +29,8 @@ public class PlaceEntity {
     private String Longitude;
 
     private String Latitude;
+    @Column(nullable = false)
+    private String uploaderEmail;
 
 }
 

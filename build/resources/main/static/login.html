@@ -126,7 +126,7 @@
                 // 로그인 성공 시
                 messageDiv.style.color = '#3897f0';
                 messageDiv.textContent = '로그인 성공! 이동 중...';
-                
+                localStorage.setItem("userEmail", email);
                 // 잠시 후 지도 페이지로 이동
                 setTimeout(() => {
                     window.location.href = 'map.html'; // 지도 페이지 파일명

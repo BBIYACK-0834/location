@@ -28,19 +28,19 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> {}) // CORS 활성화
-                .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화 (API 서버용)
+                .cors(cors -> {}) // CORS 활성화 (아래 addCorsMappings 설정을 따름)
+                .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // JWT 등 무상태 세션 정책 권장
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll() // 회원가입/로그인/H2 허용
-                        .anyRequest().authenticated() // 나머지는 인증 필요
+                        .requestMatchers("/**").permitAll() // 모든 요청 허용 (테스트용)
+                        .anyRequest().authenticated()
                 )
-                // ✅ H2 콘솔용 프레임 허용
+                // H2 콘솔 깨짐 방지
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-                .formLogin(AbstractHttpConfigurer::disable) // 기본 로그인 폼 비활성화
-                .httpBasic(AbstractHttpConfigurer::disable) // 기본 인증 비활성화
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .build();
     }
 
@@ -57,14 +57,14 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ Codespaces 환경 CORS 허용
+    // ==========================================
+    // 🚀 [핵심 수정] CORS 설정 변경
+    // ==========================================
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "https://*.github.dev",
-                        "https://scaling-rotary-phone-gppj7946w4jc9wj-8080.app.github.dev"
-                )
+                // allowedOrigins 대신 allowedOriginPatterns 사용!
+                .allowedOriginPatterns("*") 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

@@ -10,4 +10,5 @@ public class AddPlaceDto {
     private String category;
     private String longitude;
     private String latitude;
+    private String uploaderEmail;
 }

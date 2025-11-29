@@ -1,7 +1,10 @@
 package com.example.softwarepos.controller;
 
 import com.example.softwarepos.dto.UserDto;
+import com.example.softwarepos.dto.UserProfileDto; // [추가]
 import com.example.softwarepos.entity.UserEntity;
+import com.example.softwarepos.repository.FollowRepository; // [추가]
+import com.example.softwarepos.repository.PlaceRepository;   // [추가]
 import com.example.softwarepos.repository.UserRepository;
 import com.example.softwarepos.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors; // [추가]
 
 @RestController
 @RequestMapping("/user")
@@ -20,32 +24,71 @@ import java.util.*;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final PlaceRepository placeRepository;   // [추가] 게시물 조회용
+    private final FollowRepository followRepository; // [추가] 팔로우 수 조회용
+    
     private final BCryptPasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+
+    // =====================
+    // 🔹 [NEW] 마이페이지 프로필 조회
+    // =====================
+    @GetMapping("/profile/{email}")
+    public UserProfileDto getUserProfile(@PathVariable String email) {
+        // 1. 유저 정보 찾기
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        UserProfileDto dto = new UserProfileDto();
+
+        // 2. 기본 정보 매핑
+        dto.setEmail(user.getEmail());
+        dto.setNickname(user.getNickname());
+        dto.setNicknameId(user.getNicknameId());
+        dto.setIntroduction(user.getIntroduction());
+        dto.setProfileImage(user.getProfileImage());
+
+        // 3. 숫자 통계 (DB 쿼리 실행)
+        dto.setPostCount(placeRepository.countByUploaderEmail(email));
+        dto.setFollowerCount(followRepository.countByFollowing(user)); // 나를 팔로우한 사람 수
+        dto.setFollowingCount(followRepository.countByFollower(user)); // 내가 팔로우한 사람 수
+
+        // 4. 내 게시물 리스트 (지도 표시용 좌표 포함)
+        List<UserProfileDto.PostSummary> posts = placeRepository.findByUploaderEmail(email).stream()
+                .map(place -> {
+                    UserProfileDto.PostSummary summary = new UserProfileDto.PostSummary();
+                    summary.setProductImage(place.getProductImagePath());
+                    summary.setLatitude(place.getLatitude());
+                    summary.setLongitude(place.getLongitude());
+                    return summary;
+                })
+                .collect(Collectors.toList());
+
+        dto.setMyPosts(posts);
+
+        return dto;
+    }
 
     // =====================
     // 🔹 회원가입
     // =====================
     @PostMapping("/signup")
     public String signup(@RequestBody UserDto userDto) {
-        // 1. 이메일(아이디) 중복 체크
         if (userRepository.existsByEmail(userDto.getEmail())) {
             return "이미 존재하는 이메일(아이디)입니다.";
         }
-        // 2. 닉네임아이디 중복 체크
         if (userRepository.existsByNicknameId(userDto.getNicknameId())) {
             return "이미 존재하는 닉네임 ID입니다.";
         }
 
-        // 3. Entity 변환 및 저장
         UserEntity user = new UserEntity();
-        user.setEmail(userDto.getEmail()); // 아이디로 사용
-        user.setPassword(passwordEncoder.encode(userDto.getPassword())); // 비밀번호 암호화
+        user.setEmail(userDto.getEmail());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setNicknameId(userDto.getNicknameId());
         user.setNickname(userDto.getNickname());
         user.setIntroduction(userDto.getIntroduction());
-        user.setProfileImage(userDto.getProfileImage()); // 필요시 파일 업로드 로직 별도 추가
+        user.setProfileImage(userDto.getProfileImage());
         user.setRole("USER");
 
         userRepository.save(user);
@@ -59,8 +102,6 @@ public class UserController {
     public Map<String, Object> login(@RequestBody UserDto loginRequest) {
         Map<String, Object> result = new HashMap<>();
         try {
-            // UsernamePasswordAuthenticationToken의 첫 번째 인자는 'Principal(아이디)'입니다.
-            // 여기서는 email이 아이디 역할을 하므로 email을 넣습니다.
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getEmail(),
@@ -69,7 +110,7 @@ public class UserController {
             );
             
             result.put("success", true);
-            result.put("email", authentication.getName()); // 로그인된 이메일 반환
+            result.put("email", authentication.getName());
             result.put("message", "로그인 성공");
         } catch (AuthenticationException e) {
             result.put("success", false);
@@ -79,17 +120,13 @@ public class UserController {
     }
 
     // =====================
-    // 🔹 아이디(이메일) 찾기 (사실상 존재 여부 확인)
+    // 🔹 이메일 확인 & 인증코드 전송
     // =====================
-    // 이메일 자체가 아이디이므로, '닉네임아이디'를 통해 이메일을 찾거나
-    // 혹은 이메일 입력 시 가입 여부를 확인하는 로직으로 변경될 수 있습니다.
-    // 여기서는 "해당 이메일로 가입된 계정이 있는지 확인하고 인증코드 전송"하는 흐름으로 유지합니다.
     @PostMapping("/check-email") 
     public Map<String, Object> checkEmailAndSendCode(@RequestBody Map<String, String> request) {
         Map<String, Object> result = new HashMap<>();
         String email = request.get("email");
 
-        // 이메일로 유저 찾기
         Optional<UserEntity> userOpt = userRepository.findByEmail(email);
         
         if (userOpt.isEmpty()) {
@@ -98,25 +135,23 @@ public class UserController {
             return result;
         }
 
-        // 인증 코드 전송
         String code = emailService.sendVerificationCode(email);
 
         result.put("success", true);
         result.put("message", "인증 코드가 이메일로 전송되었습니다.");
-        result.put("verificationCode", code); // 개발용 (실제 배포 시 제거)
+        result.put("verificationCode", code);
         return result;
     }
 
     // =====================
-    // 🔹 비밀번호 찾기
+    // 🔹 비밀번호 찾기 (이메일 + 닉네임ID)
     // =====================
     @PostMapping("/find-password")
     public Map<String, Object> findPassword(@RequestBody Map<String, String> request) {
         Map<String, Object> result = new HashMap<>();
-        String email = request.get("email");         // 아이디(이메일)
-        String nicknameId = request.get("nicknameId"); // 본인 확인용 닉네임아이디
+        String email = request.get("email");
+        String nicknameId = request.get("nicknameId");
 
-        // 이메일과 닉네임아이디가 일치하는 계정이 있는지 확인
         Optional<UserEntity> userOpt = userRepository.findByEmailAndNicknameId(email, nicknameId);
         
         if (userOpt.isEmpty()) {
@@ -125,17 +160,16 @@ public class UserController {
             return result;
         }
 
-        // 인증 코드 전송
         String code = emailService.sendVerificationCode(email);
 
         result.put("success", true);
         result.put("message", "인증 코드가 이메일로 전송되었습니다.");
-        result.put("verificationCode", code); // 개발용
+        result.put("verificationCode", code);
         return result;
     }
 
     // =====================
-    // 🔹 인증 코드 확인 (변동 없음)
+    // 🔹 인증 코드 검증
     // =====================
     @PostMapping("/verify-code")
     public Map<String, Object> verifyCode(@RequestBody Map<String, String> request) {
@@ -155,7 +189,7 @@ public class UserController {
     @PostMapping("/reset-password")
     public Map<String, Object> resetPassword(@RequestBody Map<String, String> request) {
         Map<String, Object> result = new HashMap<>();
-        String email = request.get("email"); // 변경할 계정의 이메일(아이디)
+        String email = request.get("email");
         String newPassword = request.get("newPassword");
 
         Optional<UserEntity> userOpt = userRepository.findByEmail(email);
@@ -167,7 +201,7 @@ public class UserController {
         }
 
         UserEntity user = userOpt.get();
-        user.setPassword(passwordEncoder.encode(newPassword)); // 비밀번호 변경
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
         result.put("success", true);
