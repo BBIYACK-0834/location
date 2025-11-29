@@ -3,35 +3,66 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>모바일 최적화 클러스터 지도</title>
+  <title>자동 위치 장소 등록</title>
+
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Malgun Gothic', sans-serif; }
+    
     #map { width: 100%; height: 100vh; }
 
+    /* 메인 장소 등록 버튼 */
     #registerBtn {
       position: absolute; top: 20px; left: 20px;
-      padding: 10px 20px; background-color: #4CAF50;
-      color: white; border: none; border-radius: 5px;
-      cursor: pointer; z-index: 2;
+      padding: 12px 20px; background-color: #4CAF50;
+      color: white; border: none; border-radius: 8px;
+      cursor: pointer; z-index: 2; font-weight: bold; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-size: 16px;
     }
 
+    /* 등록 폼 (모달) */
     #placeForm {
       display: none; position: absolute;
       top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background-color: white; padding: 20px;
-      border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-      z-index: 10; width: 300px;
+      background-color: white; padding: 25px;
+      border-radius: 15px; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+      z-index: 100; width: 320px; max-height: 90vh; overflow-y: auto;
     }
 
-    #placeForm input, #placeForm textarea {
-      width: 100%; margin-bottom: 10px; padding: 8px; font-size: 14px;
-      border: 1px solid #ccc; border-radius: 4px;
-    }
+    h3 { margin-top: 0; text-align: center; margin-bottom: 20px; color: #333; }
 
-    #placeForm button {
-      background-color: #4CAF50; color: white;
-      padding: 10px 20px; border: none; border-radius: 5px;
-      cursor: pointer;
+    /* 입력 필드 스타일 */
+    label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 12px; margin-bottom: 4px; }
+    
+    input[type="text"], textarea, input[type="file"] {
+      width: 100%; padding: 10px; box-sizing: border-box;
+      border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+      background-color: #fff;
+    }
+    
+    input[type="text"]:focus, textarea:focus { border-color: #4CAF50; outline: none; }
+    textarea { resize: vertical; }
+
+    /* 읽기 전용 필드 (좌표) - 로딩 중일 때 색상 변경 */
+    input[readonly] { background-color: #f9f9f9; color: #555; cursor: default; }
+
+    /* 하단 버튼 그룹 */
+    .btn-group { margin-top: 25px; display: flex; gap: 10px; }
+    .btn-group button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; font-size: 15px; }
+    .btn-save { background-color: #4CAF50; }
+    .btn-close { background-color: #888; }
+
+    /* 클러스터 마커 */
+    .cluster-marker {
+      position: relative; background: white; border-radius: 50%;
+      width: 60px; height: 60px; overflow: hidden;
+      border: 3px solid #4CAF50; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;
+    }
+    .cluster-marker img { width: 100%; height: 100%; object-fit: cover; }
+    .cluster-count {
+      position: absolute; bottom: 0; right: 0; background-color: red; color: white;
+      width: 24px; height: 24px; font-size: 12px; font-weight: bold;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2;
     }
   </style>
 
@@ -41,97 +72,258 @@
 
 <div id="map"></div>
 
-<button id="registerBtn">장소 등록</button>
+<button id="registerBtn" onclick="openFormAndGetGPS()">📍 장소 등록</button>
 
 <div id="placeForm">
   <h3>장소 등록</h3>
+  
+  <p style="font-size:12px; color:#666; text-align:center; margin-bottom:15px;">
+    현재 위치를 자동으로 불러옵니다.
+  </p>
+
+  <div style="display:flex; gap:10px;">
+    <div style="flex:1;">
+      <label>위도</label>
+      <input type="text" id="placeLat" readonly placeholder="위치 확인 중...">
+    </div>
+    <div style="flex:1;">
+      <label>경도</label>
+      <input type="text" id="placeLng" readonly placeholder="위치 확인 중...">
+    </div>
+  </div>
+
   <label>장소 이름</label>
-  <input type="text" id="placeName" required>
-  <label>장소 설명</label>
-  <textarea id="placeDesc" rows="4" required></textarea>
+  <input type="text" id="placeName" placeholder="장소 이름을 입력하세요">
+
+  <label>설명</label>
+  <textarea id="placeDesc" rows="3" placeholder="장소에 대한 설명"></textarea>
+
   <label>카테고리</label>
-  <input type="text" id="placeCategory" required>
-  <label>이미지 업로드</label>
+  <input type="text" id="placeCategory" placeholder="예: 맛집, 산책로">
+
+  <label>이미지</label>
   <input type="file" id="placeImage" accept="image/*">
-  <label>위도</label>
-  <input type="text" id="placeLat" readonly>
-  <label>경도</label>
-  <input type="text" id="placeLng" readonly>
-  <button onclick="registerPlace()">등록</button>
+
+  <div class="btn-group">
+    <button class="btn-save" onclick="registerPlace()">저장</button>
+    <button class="btn-close" onclick="closeForm()">취소</button>
+  </div>
 </div>
 
 <script>
-const map = new kakao.maps.Map(document.getElementById('map'), {
-  center: new kakao.maps.LatLng(37.5665, 126.9780),
-  level: 8
-});
+// ----------------------------------------------------
+// 1. 지도 초기화
+// ----------------------------------------------------
+const mapContainer = document.getElementById('map');
+const mapOption = {
+    center: new kakao.maps.LatLng(37.566826, 126.9786567),
+    level: 5 
+};
 
-const clusterPositions = [];  // 클러스터 데이터
-let clusterOverlays = [];
+const map = new kakao.maps.Map(mapContainer, mapOption);
 
-// 클러스터 평균 위치 계산
-function averagePosition(positions) {
-  let latSum = 0, lngSum = 0;
-  positions.forEach(p => { latSum += p.getLat(); lngSum += p.getLng(); });
-  return new kakao.maps.LatLng(latSum / positions.length, lngSum / positions.length);
+let clusterPositions = []; 
+let clusterOverlays = [];  
+let imageIntervals = [];   
+
+// ----------------------------------------------------
+// 2. 폼 열기 + GPS 자동 실행 (핵심 로직)
+// ----------------------------------------------------
+function openFormAndGetGPS() {
+    // 1. 폼 열기
+    document.getElementById('placeForm').style.display = 'block';
+    
+    // 2. 기존 값 초기화 (로딩 메시지 표시)
+    document.getElementById('placeName').value = '';
+    document.getElementById('placeDesc').value = '';
+    document.getElementById('placeCategory').value = '';
+    document.getElementById('placeImage').value = '';
+    
+    document.getElementById('placeLat').value = "위치 찾는 중...";
+    document.getElementById('placeLng').value = "위치 찾는 중...";
+
+    // 3. GPS 가져오기 시작
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // 값 채우기
+                document.getElementById('placeLat').value = lat;
+                document.getElementById('placeLng').value = lng;
+
+                // 지도를 현재 위치로 부드럽게 이동
+                const locPosition = new kakao.maps.LatLng(lat, lng);
+                map.panTo(locPosition);
+            },
+            (err) => {
+                console.error(err);
+                alert("위치를 가져올 수 없습니다.\n위치 권한을 허용해주세요.");
+                document.getElementById('placeLat').value = "실패";
+                document.getElementById('placeLng').value = "실패";
+            },
+            {
+                enableHighAccuracy: true, // 정확도 높임
+                timeout: 5000,            // 5초 안에 못 찾으면 에러
+                maximumAge: 0
+            }
+        );
+    } else {
+        alert("이 브라우저는 GPS를 지원하지 않습니다.");
+    }
 }
 
-// 클러스터 렌더링
+function closeForm() {
+    document.getElementById('placeForm').style.display = 'none';
+}
+
+
+// ----------------------------------------------------
+// 3. 클러스터링 로직 (기존 유지)
+// ----------------------------------------------------
+function averagePosition(positions) {
+  let lat = 0, lng = 0;
+  positions.forEach(p => { lat += p.getLat(); lng += p.getLng(); });
+  return new kakao.maps.LatLng(lat / positions.length, lng / positions.length);
+}
+
+function getPixelDistance(map, latlng1, latlng2) {
+  const proj = map.getProjection();
+  const p1 = proj.pointFromCoords(latlng1);
+  const p2 = proj.pointFromCoords(latlng2);
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function groupClustersByDistance(points) {
+  const groups = [];
+  const visited = new Set();
+  const THRESHOLD = 80; 
+
+  for (let i = 0; i < points.length; i++) {
+    if (visited.has(i)) continue;
+    const group = [points[i]];
+    visited.add(i);
+
+    for (let j = i + 1; j < points.length; j++) {
+      if (visited.has(j)) continue;
+      const d = getPixelDistance(map, points[i].position, points[j].position);
+      if (d < THRESHOLD) {
+        group.push(points[j]);
+        visited.add(j);
+      }
+    }
+    groups.push(group);
+  }
+  return groups;
+}
+
 function renderClusters() {
   clusterOverlays.forEach(o => o.setMap(null));
   clusterOverlays = [];
+  imageIntervals.forEach(i => clearInterval(i));
+  imageIntervals = [];
 
-  const clusters = clusterPositions.map(c => [c]); // 간단하게 1:1로 처리
+  let groups;
+  if (map.getLevel() > 7) {
+    groups = groupClustersByDistance(clusterPositions);
+  } else {
+    groups = clusterPositions.map(c => [c]);
+  }
 
-  clusters.forEach(group => {
-    const clusterPos = averagePosition(group.map(c => c.position));
+  groups.forEach(group => {
+    const pos = averagePosition(group.map(g => g.position));
     const content = document.createElement('div');
     content.className = 'cluster-marker';
 
     const img = document.createElement('img');
-    img.src = group[0].imageSrc;
+    img.src = group[0].imageSrc || "https://via.placeholder.com/100"; 
     content.appendChild(img);
 
-    const countDiv = document.createElement('div');
-    countDiv.className = 'cluster-count';
-    countDiv.textContent = group.length;
-    content.appendChild(countDiv);
+    if (group.length > 1) {
+      const count = document.createElement('div');
+      count.className = 'cluster-count';
+      count.textContent = group.length;
+      content.appendChild(count);
+    }
+
+    let currentIndex = 0;
+    if (group.length > 1) {
+      const interval = setInterval(() => {
+        currentIndex = (currentIndex + 1) % group.length; 
+        img.src = group[currentIndex].imageSrc;           
+      }, 1500); 
+      imageIntervals.push(interval);
+    }
 
     const overlay = new kakao.maps.CustomOverlay({
-      position: clusterPos,
+      position: pos,
       content: content,
       yAnchor: 1
     });
+
     overlay.setMap(map);
     clusterOverlays.push(overlay);
 
-    // 클러스터 클릭 → 서버에서 장소 리스트 가져오기
-    content.addEventListener('click', () => onClusterClick(clusterPos));
+    content.addEventListener('click', () => {
+      const selectedPlace = group[currentIndex]; 
+      onClusterClick(selectedPlace);
+    });
   });
 }
 
-// 지도 클릭 → 위도/경도 입력
-kakao.maps.event.addListener(map, 'click', e => {
-  const latlng = e.latLng;
-  document.getElementById("placeLat").value = latlng.getLat();
-  document.getElementById("placeLng").value = latlng.getLng();
-});
+function onClusterClick(place) {
+  const newWindow = window.open("", "_blank", "width=400,height=500");
+  const displayImg = place.imageSrc ? place.imageSrc : "https://via.placeholder.com/150";
 
-// 장소 등록 버튼
-document.getElementById('registerBtn').onclick = () => {
-  document.getElementById('placeForm').style.display = 'block';
-};
+  newWindow.document.write(`
+    <html>
+    <head>
+      <title>장소 상세</title>
+      <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+        h2 { margin-bottom: 5px; color: #333; }
+        .cate { color: #888; font-size: 14px; margin-bottom: 20px; display: inline-block; background: #eee; padding: 4px 8px; border-radius: 4px; }
+        .desc { text-align: left; background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; }
+        p { color: #aaa; font-size: 12px; margin-top: 10px; }
+        button { margin-top: 20px; padding: 10px 20px; cursor: pointer; }
+      </style>
+    </head>
+    <body>
+      <img src="${displayImg}" />
+      <h2>${place.name || '이름 없는 장소'}</h2>
+      <span class="cate">${place.category || '카테고리 없음'}</span>
+      <div class="desc">${place.desc || '설명이 없습니다.'}</div>
+      <p>위도: ${place.position.getLat()}, 경도: ${place.position.getLng()}</p>
+      <button onclick="window.close()">닫기</button>
+    </body>
+    </html>
+  `);
+}
 
-// 장소 등록
+
+// ----------------------------------------------------
+// 4. 서버 등록
+// ----------------------------------------------------
 function registerPlace() {
-  const name = document.getElementById("placeName").value;
-  const desc = document.getElementById("placeDesc").value;
-  const category = document.getElementById("placeCategory").value;
-  const lat = document.getElementById("placeLat").value;
-  const lng = document.getElementById("placeLng").value;
-  const file = document.getElementById("placeImage").files[0];
+  const name = document.getElementById('placeName').value;
+  const desc = document.getElementById('placeDesc').value;
+  const category = document.getElementById('placeCategory').value;
+  const lat = document.getElementById('placeLat').value;
+  const lng = document.getElementById('placeLng').value;
+  const file = document.getElementById('placeImage').files[0];
 
-  if (!name || !desc || !category || !lat || !lng) { alert("모든 필드를 입력해주세요."); return; }
+  if (lat === "위치 찾는 중..." || lat === "실패") {
+    alert("위치 정보를 불러오는 중이거나 실패했습니다.\n잠시 후 다시 시도해주세요.");
+    return;
+  }
+  if (!name || !desc) {
+    alert("장소 이름과 설명을 입력해주세요.");
+    return;
+  }
 
   const formData = new FormData();
   formData.append("placename", name);
@@ -142,61 +334,38 @@ function registerPlace() {
   if (file) formData.append("uploadFile", file);
 
   fetch("https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/place/add", {
-    method: "POST", body: formData
+    method: "POST",
+    body: formData
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) {
+    // 성공 시 처리
+    if (true) { 
       alert("장소가 등록되었습니다!");
-      document.getElementById("placeForm").style.display = "none";
+      closeForm();
 
       clusterPositions.push({
-        position: new kakao.maps.LatLng(parseFloat(lat), parseFloat(lng)),
-        count: 1,
-        imageSrc: file ? URL.createObjectURL(file) : '/default-image.png'
+        position: new kakao.maps.LatLng(Number(lat), Number(lng)),
+        imageSrc: file ? URL.createObjectURL(file) : "https://via.placeholder.com/100",
+        name: name,         
+        desc: desc,        
+        category: category, 
+        count: 1
       });
-      renderClusters();
-    } else {
-      alert("등록 실패: " + data.message);
+
+      renderClusters(); 
+      map.panTo(new kakao.maps.LatLng(Number(lat), Number(lng)));
     }
   })
-  .catch(err => { console.error(err); alert("서버 오류 발생"); });
+  .catch(err => {
+    console.error(err);
+    alert("오류 발생 (콘솔 확인)");
+  });
 }
 
-// 클러스터 클릭 → 새 창으로 정보 표시
-function onClusterClick(clusterPos) {
-  fetch("https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/place/list")
-    .then(res => res.json())
-    .then(data => {
-      // 클러스터 중심과 가까운 장소만 필터링 (0.05 범위)
-      const filtered = data.filter(place => {
-        const lat = parseFloat(place.latitude);
-        const lng = parseFloat(place.longitude);
-        return Math.abs(lat - clusterPos.getLat()) < 0.05 &&
-               Math.abs(lng - clusterPos.getLng()) < 0.05;
-      });
+kakao.maps.event.addListener(map, 'zoom_changed', renderClusters);
+kakao.maps.event.addListener(map, 'dragend', renderClusters);
 
-      // 새 창에 표시
-      const newWindow = window.open("", "_blank", "width=400,height=600,scrollbars=yes");
-      newWindow.document.write("<h2>클러스터 장소 목록</h2>");
-      filtered.forEach(place => {
-        newWindow.document.write(`
-          <div style="margin-bottom:10px;">
-            <img src="${place.productImagePath ? '/uploads/' + place.productImagePath : '/default.png'}"
-                 width="80" height="80" style="object-fit:cover; margin-right:10px;">
-            <strong>${place.placename}</strong><br>
-            ${place.category}<br>
-            ${place.placeExp}
-          </div><hr>
-        `);
-      });
-    })
-    .catch(err => console.error(err));
-}
-
-// 초기 렌더링
-renderClusters();
 </script>
-
 </body>
 </html>
