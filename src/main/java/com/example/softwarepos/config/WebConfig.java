@@ -1,4 +1,4 @@
-package com.example.softwarepos.config; // 본인 패키지명에 맞게 수정하세요
+package com.example.softwarepos.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;

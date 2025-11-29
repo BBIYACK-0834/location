@@ -3,99 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>인스타 스타일 (등록 후 이동)</title>
+  <title>지도 + 하단 네비게이션</title>
 
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00e9c16d27cc5857e6ce25b69f784aa&libraries=services"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fafafa; overflow: hidden; }
-    #map { width: 100%; height: 100%; }
+    
+    /* 지도는 하단 네비게이션 바 높이(60px)만큼 공간을 비워둡니다 */
+    #map { width: 100%; height: calc(100% - 60px); }
 
-    /* 클러스터 마커 */
-    .cluster-marker {
-      position: relative; background: white; border-radius: 50%;
-      width: 60px; height: 60px; overflow: hidden;
-      border: 3px solid #4CAF50; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;
-    }
-    .cluster-marker img { width: 100%; height: 100%; object-fit: cover; }
-    .cluster-count {
-      position: absolute; bottom: 0; right: 0; background-color: red; color: white;
-      width: 24px; height: 24px; font-size: 12px; font-weight: bold;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2;
+    /* === 하단 네비게이션 바 === */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+      background: white; border-top: 1px solid #dbdbdb;
+      display: flex; align-items: center; justify-content: space-around;
+      z-index: 50; /* 지도보다 위에 표시 */
     }
 
-    /* 메인 카메라 버튼 */
+    .nav-item {
+      font-size: 24px; color: #262626; cursor: pointer;
+      padding: 10px;
+    }
+
+    /* === 중앙 카메라 버튼 (스타일 변경) === */
     #cameraBtn {
-      position: absolute; bottom: 30px; right: 30px;
-      width: 60px; height: 60px; border-radius: 50%;
+      width: 50px; height: 50px; border-radius: 50%;
       background-color: #3897f0; color: white; border: none;
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      cursor: pointer; z-index: 10;
+      font-size: 24px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      cursor: pointer; 
+      /* 하단 바 안에 자연스럽게 배치 */
+      margin-bottom: 10px; 
     }
 
-    /* 모달 공통 */
-    .modal-container {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: white; z-index: 100; flex-direction: column;
-      animation: slideUp 0.3s ease-out;
-    }
+
+    /* === 기타 모달 및 스타일 (기존 유지) === */
+    .cluster-marker { position: relative; background: white; border-radius: 50%; width: 60px; height: 60px; overflow: hidden; border: 3px solid #4CAF50; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer; }
+    .cluster-marker img { width: 100%; height: 100%; object-fit: cover; }
+    .cluster-count { position: absolute; bottom: 0; right: 0; background-color: red; color: white; width: 24px; height: 24px; font-size: 12px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .modal-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; z-index: 100; flex-direction: column; animation: slideUp 0.3s ease-out; }
     #searchModal { z-index: 150; } 
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .nav-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 15px; border-bottom: 1px solid #dbdbdb; background: white;
-      font-weight: 600; font-size: 17px; height: 50px; box-sizing: border-box;
-    }
+    .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #dbdbdb; background: white; font-weight: 600; font-size: 17px; height: 50px; box-sizing: border-box; }
     .close-btn { font-size: 24px; cursor: pointer; color: #262626; }
     .share-btn { color: #3897f0; font-weight: 600; cursor: pointer; font-size: 16px; border: none; background: none; padding: 0; }
     .share-btn:disabled { opacity: 0.5; }
-
-    /* 작성 폼 */
     .media-caption-container { display: flex; padding: 15px; border-bottom: 1px solid #dbdbdb; }
     #previewImage { width: 80px; height: 80px; object-fit: cover; margin-right: 15px; border-radius: 4px; background: #eee; }
     #captionInput { flex: 1; border: none; resize: none; font-family: inherit; font-size: 15px; outline: none; padding-top: 5px; }
-
     .option-list { list-style: none; padding: 0; margin: 0; }
-    .option-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 15px; border-bottom: 1px solid #dbdbdb; cursor: pointer;
-    }
+    .option-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #dbdbdb; cursor: pointer; }
     .option-item:active { background-color: #f5f5f5; }
     .option-icon { width: 24px; text-align: center; margin-right: 15px; color: #262626; font-size: 20px; }
     .option-text-group { display: flex; flex-direction: column; }
     .option-label { font-size: 16px; color: #262626; }
     .selected-location { font-size: 13px; color: #3897f0; font-weight: 600; margin-top: 4px; }
     .option-arrow { color: #dbdbdb; font-size: 18px; }
-
-    /* 위치 검색 */
     .search-header { padding: 10px; background: #f0f0f0; }
-    .search-input-box {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dbdbdb;
-      font-size: 14px; outline: none; box-sizing: border-box;
-    }
+    .search-input-box { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dbdbdb; font-size: 14px; outline: none; box-sizing: border-box; }
     #searchResultList { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
     .search-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
     .search-item:hover { background-color: #fafafa; }
     .place-name { font-weight: bold; font-size: 15px; color: #262626; margin-bottom: 4px; }
     .place-addr { font-size: 12px; color: #888; }
-
-    /* 카메라 UI */
-    #cameraInterface {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: black; z-index: 200; flex-direction: column;
-    }
+    #cameraInterface { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 200; flex-direction: column; }
     #cameraVideo { flex: 1; width: 100%; object-fit: cover; }
-    .camera-controls {
-      height: 100px; display: flex; align-items: center; justify-content: center; position: relative;
-      background: rgba(0,0,0,0.5);
-    }
+    .camera-controls { height: 100px; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(0,0,0,0.5); }
     #shutterBtn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid #ddd; cursor: pointer; }
     .camera-close { position: absolute; top: 20px; left: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 210;}
-
     #fileInput, #snapshotCanvas { display: none; }
     #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 300; color: #3897f0; font-size: 40px; }
   </style>
@@ -104,9 +81,20 @@
 
 <div id="map"></div>
 
-<button id="cameraBtn" onclick="handleCameraButtonClick()">
-  <i class="fas fa-camera"></i>
-</button>
+<div class="bottom-nav">
+  <div class="nav-item" onclick="alert('현재 홈 화면입니다.')">
+    <i class="fas fa-home"></i>
+  </div>
+  
+  <button id="cameraBtn" onclick="handleCameraButtonClick()">
+    <i class="fas fa-camera"></i>
+  </button>
+
+  <div class="nav-item" onclick="alert('마이페이지 기능 준비중')">
+    <i class="far fa-user"></i>
+  </div>
+</div>
+
 
 <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
 
@@ -178,15 +166,23 @@ let clusterPositions = [];
 let clusterOverlays = [];
 let imageIntervals = [];
 
-// 좌표는 무조건 GPS(자동), 이름은 태그(수동/자동)
 let gpsLat = null; 
 let gpsLng = null;
 let taggedPlaceName = null; 
 
 const mapContainer = document.getElementById('map');
+// 지도가 하단 바 위까지만 오도록 높이 조절 (CSS에서 처리했지만 JS로도 확실하게)
+mapContainer.style.height = window.innerHeight - 60 + 'px'; 
+
 const mapOption = { center: new kakao.maps.LatLng(37.566826, 126.9786567), level: 5 };
 map = new kakao.maps.Map(mapContainer, mapOption);
 const ps = new kakao.maps.services.Places();
+
+// 창 크기 변경 시 지도 높이 재조정
+window.addEventListener('resize', () => {
+    mapContainer.style.height = window.innerHeight - 60 + 'px';
+    map.relayout();
+});
 
 
 // ==========================================
@@ -315,9 +311,7 @@ function onClusterClick(place) {
 // 3. 카메라/파일 처리 + [GPS 자동 실행]
 // ==========================================
 async function handleCameraButtonClick() {
-  
-  // 카메라 켜짐과 동시에 GPS 확보 시작
-  getCurrentLocation();
+  getCurrentLocation(); 
 
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try {
@@ -334,7 +328,7 @@ async function handleCameraButtonClick() {
 }
 
 function handleFileSelect(event) {
-  getCurrentLocation(); // GPS 확보 시작
+  getCurrentLocation(); 
 
   const file = event.target.files[0];
   if (file) {
@@ -348,16 +342,14 @@ function handleFileSelect(event) {
   }
 }
 
-// GPS 위치 가져오는 함수
 function getCurrentLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         gpsLat = position.coords.latitude;
         gpsLng = position.coords.longitude;
-        console.log("GPS 확보 완료:", gpsLat, gpsLng);
+        console.log("📍 GPS 확보 완료:", gpsLat, gpsLng);
         
-        // 폼이 열려있고, 태그된 이름이 없다면 '현재 위치'라고 살짝 보여주기
         if(document.getElementById('placeFormModal').style.display === 'flex' && !taggedPlaceName) {
              document.getElementById('selectedLocationName').textContent = "현재 위치";
              document.getElementById('selectedLocationName').style.color = "#999";
@@ -395,7 +387,8 @@ function takeSnapshot() {
 // ==========================================
 function openFormModal() {
   document.getElementById('placeFormModal').style.display = 'flex';
-  document.getElementById('cameraBtn').style.display = 'none';
+  // [수정] 하단 바가 있으므로 카메라 버튼 숨길 필요 없음
+  // document.getElementById('cameraBtn').style.display = 'none'; 
   
   if (!taggedPlaceName && gpsLat) {
       document.getElementById('selectedLocationName').textContent = "현재 위치";
@@ -405,14 +398,15 @@ function openFormModal() {
 
 function closeFormModal() {
   document.getElementById('placeFormModal').style.display = 'none';
-  document.getElementById('cameraBtn').style.display = 'flex';
+  // [수정] 하단 바가 있으므로 카메라 버튼 표시할 필요 없음
+  // document.getElementById('cameraBtn').style.display = 'flex';
   
   document.getElementById('captionInput').value = '';
   document.getElementById('previewImage').src = '';
   document.getElementById('selectedLocationName').textContent = '';
   document.getElementById('selectedLocationName').style.color = "#3897f0"; 
   
-  taggedPlaceName = null;
+  taggedPlaceName = null; 
 }
 
 function openSearchModal() {
@@ -444,8 +438,9 @@ function placesSearchCB(data, status) {
         <div class="place-name">${place.place_name}</div>
         <div class="place-addr">${place.road_address_name || place.address_name}</div>
       `;
-      // [이름만 사용]
-      item.onclick = () => { selectPlace(place.place_name); };
+      item.onclick = () => { 
+          selectPlace(place.place_name); 
+      };
       listEl.appendChild(item);
     });
   } else {
@@ -454,26 +449,23 @@ function placesSearchCB(data, status) {
 }
 
 function selectPlace(name) {
-  taggedPlaceName = name; // 이름만 저장
-  
-  // UI 업데이트
+  taggedPlaceName = name; 
   const label = document.getElementById('selectedLocationName');
   label.textContent = name;
   label.style.color = "#3897f0"; 
-
   closeSearchModal();
 }
 
 
 // ==========================================
-// 5. 공유 (GPS 좌표 + 선택된 이름)
+// 5. 공유 (전송 데이터 확인)
 // ==========================================
 function sharePost() {
   const caption = document.getElementById('captionInput').value;
 
   if (!selectedImageBlob) { alert("이미지가 없습니다."); return; }
   if (!gpsLat || !gpsLng) {
-    alert("현재 위치(GPS)를 확보하지 못했습니다.\n잠시 후 다시 시도해주세요.");
+    alert("현재 위치(GPS)를 확보하지 못했습니다.");
     return;
   }
 
@@ -482,14 +474,14 @@ function sharePost() {
   shareBtn.textContent = '공유 중...';
   document.getElementById('loading').style.display = 'block';
 
-  // [데이터 전송 로직]
   const finalName = taggedPlaceName || "이름 없는 장소";
 
   const formData = new FormData();
-  formData.append("placename", finalName);
+  formData.append("placename", finalName); 
   formData.append("placeExp", caption);
-  formData.append("latitude", gpsLat);  // 무조건 GPS 좌표
-  formData.append("longitude", gpsLng); // 무조건 GPS 좌표
+  formData.append("category", "일상"); 
+  formData.append("latitude", gpsLat);  
+  formData.append("longitude", gpsLng);
   formData.append("uploadFile", selectedImageBlob, "image.jpg");
 
   fetch("https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/place/add", {
@@ -502,7 +494,6 @@ function sharePost() {
           alert("게시물이 등록되었습니다!");
           closeFormModal();
           
-          // 클러스터 데이터 추가
           clusterPositions.push({
             position: new kakao.maps.LatLng(gpsLat, gpsLng),
             imageSrc: URL.createObjectURL(selectedImageBlob),
@@ -512,13 +503,11 @@ function sharePost() {
           });
 
           renderClusters();
-          
-          // [추가됨] 등록된 위치로 지도 중심 이동
           map.panTo(new kakao.maps.LatLng(gpsLat, gpsLng));
       }
   })
   .catch(err => {
-      console.error(err);
+      console.error("❌ 에러 발생:", err);
       alert("오류 발생");
   })
   .finally(() => {
@@ -532,8 +521,6 @@ function sharePost() {
 // 6. 이벤트 리스너
 // ==========================================
 kakao.maps.event.addListener(map, 'zoom_changed', renderClusters);
-
-
 </script>
 </body>
 </html>

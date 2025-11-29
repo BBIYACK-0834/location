@@ -3,69 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 화면</title>
+    <title>로그인</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #fafafa;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
         }
         .login-container {
             background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: 300px;
+            padding: 40px;
+            border: 1px solid #dbdbdb;
+            border-radius: 1px;
+            width: 300px; /* 인스타 스타일 느낌 */
+            text-align: center;
         }
         .login-container h2 {
-            text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            font-size: 24px;
+            color: #262626;
         }
         .login-container input {
             width: 100%;
             padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            border: 1px solid #dbdbdb;
+            border-radius: 3px;
+            background: #fafafa;
+            box-sizing: border-box; /* 패딩 포함 크기 계산 */
+            font-size: 14px;
         }
         .login-container button {
             width: 100%;
-            padding: 10px;
-            background: #007bff;
+            padding: 8px;
+            margin-top: 10px;
+            background: #3897f0; /* 인스타 블루 */
             color: #fff;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
         }
         .login-container button:hover {
-            background: #0056b3;
+            background: #2880d6;
         }
         #signupBtn {
-            background: #28a745;
-            margin-top: 10px;
+            background: #fff;
+            color: #3897f0;
+            margin-top: 20px;
+            font-weight: normal;
         }
         #signupBtn:hover {
-            background: #218838;
+            background: #fff;
+            color: #2880d6;
         }
         .message {
             margin-top: 15px;
-            text-align: center;
-            color: red;
+            font-size: 14px;
+            color: #ed4956;
+        }
+        .divider {
+            margin: 20px 0;
+            border-top: 1px solid #dbdbdb;
         }
     </style>
 </head>
 <body>
 
 <div class="login-container">
-    <h2>로그인</h2>
-    <input type="text" id="userid" placeholder="아이디">
-    <input type="password" id="userpw" placeholder="비밀번호">
+    <h2>Login</h2>
+    
+    <input type="text" id="email" placeholder="이메일 주소">
+    
+    <input type="password" id="password" placeholder="비밀번호">
+    
     <button id="loginBtn">로그인</button>
-    <button id="signupBtn">회원가입</button>
+    
     <div class="message" id="message"></div>
+
+    <div class="divider"></div>
+    
+    <p style="font-size: 14px; color: #8e8e8e;">계정이 없으신가요?</p>
+    <button id="signupBtn">가입하기</button>
 </div>
 
 <script>
@@ -73,41 +97,63 @@
     const signupBtn = document.getElementById('signupBtn');
     const messageDiv = document.getElementById('message');
 
+    // [로그인 버튼 클릭 시]
     loginBtn.addEventListener('click', () => {
-        const userid = document.getElementById('userid').value;
-        const userpw = document.getElementById('userpw').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
         // 유효성 체크
-        if (!userid || !userpw) {
-            messageDiv.textContent = '아이디와 비밀번호를 입력해주세요.';
+        if (!email || !password) {
+            messageDiv.textContent = '이메일과 비밀번호를 모두 입력해주세요.';
             return;
         }
 
-        fetch('https://scaling-rotary-phone-gppj7946w4jc9wj-8080.app.github.dev/user/login', {
+        // 백엔드로 전송 (키값: email, password)
+        // [주의] 주소가 본인의 Codespaces 주소인지 확인하세요!
+        fetch('https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/user/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ userid, userpw })
+            body: JSON.stringify({ 
+                email: email, 
+                password: password 
+            })
         })
-        .then(res => {
-            if (!res.ok) throw new Error('로그인 실패');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            console.log('로그인 성공:', data);
-            messageDiv.style.color = 'green';
-            messageDiv.textContent = '로그인 성공!';
+            if (data.success) {
+                // 로그인 성공 시
+                messageDiv.style.color = '#3897f0';
+                messageDiv.textContent = '로그인 성공! 이동 중...';
+                
+                // 잠시 후 지도 페이지로 이동
+                setTimeout(() => {
+                    window.location.href = 'map.html'; // 지도 페이지 파일명
+                }, 500);
+            } else {
+                // 로그인 실패 시
+                messageDiv.style.color = '#ed4956';
+                messageDiv.textContent = data.message || '로그인 실패';
+            }
         })
         .catch(err => {
             console.error(err);
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = '로그인 실패. 아이디/비밀번호 확인';
+            messageDiv.style.color = '#ed4956';
+            messageDiv.textContent = '서버 통신 오류가 발생했습니다.';
         });
     });
 
+    // [회원가입 버튼 클릭 시]
     signupBtn.addEventListener('click', () => {
-        window.location.href = 'signup.html';
+        window.location.href = 'signup.html'; // 회원가입 페이지로 이동
+    });
+    
+    // 엔터키 입력 시 로그인 실행
+    document.getElementById('password').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            loginBtn.click();
+        }
     });
 </script>
 
