@@ -9,7 +9,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String uploadPath = "file:///workspaces/AIShop/uploads/";
+        String uploadPath = "file:///workspaces/location/uploads/";
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadPath);
     }

@@ -1,10 +1,10 @@
 package com.example.softwarepos.controller;
 
 import com.example.softwarepos.dto.UserDto;
-import com.example.softwarepos.dto.UserProfileDto; // [추가]
+import com.example.softwarepos.dto.UserProfileDto;
 import com.example.softwarepos.entity.UserEntity;
-import com.example.softwarepos.repository.FollowRepository; // [추가]
-import com.example.softwarepos.repository.PlaceRepository;   // [추가]
+import com.example.softwarepos.repository.FollowRepository; 
+import com.example.softwarepos.repository.PlaceRepository;  
 import com.example.softwarepos.repository.UserRepository;
 import com.example.softwarepos.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import com.example.softwarepos.jwt.JwtUtil;
 import java.util.*;
-import java.util.stream.Collectors; // [추가]
+import java.util.stream.Collectors; 
 
 @RestController
 @RequestMapping("/user")
@@ -30,7 +30,7 @@ public class UserController {
     private final BCryptPasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-
+    private final JwtUtil jwtUtil;
     // =====================
     // 🔹 [NEW] 마이페이지 프로필 조회
     // =====================
@@ -99,25 +99,30 @@ public class UserController {
     // 🔹 로그인
     // =====================
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody UserDto loginRequest) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getEmail(),
-                            loginRequest.getPassword()
-                    )
-            );
-            
-            result.put("success", true);
-            result.put("email", authentication.getName());
-            result.put("message", "로그인 성공");
-        } catch (AuthenticationException e) {
-            result.put("success", false);
-            result.put("message", "이메일 또는 비밀번호가 올바르지 않습니다.");
-        }
-        return result;
+public Map<String, Object> login(@RequestBody UserDto loginRequest) {
+    Map<String, Object> result = new HashMap<>();
+    try {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getEmail(),
+                        loginRequest.getPassword()
+                )
+        );
+        
+        String token = jwtUtil.createToken(loginRequest.getEmail()); // 토큰 생성
+        
+        result.put("success", true);
+        result.put("email", loginRequest.getEmail());
+        result.put("accessToken", token); // ★ 토큰을 담아서 보내야 함!
+        result.put("message", "로그인 성공");
+        // 👆👆👆👆👆👆
+
+    } catch (AuthenticationException e) {
+        result.put("success", false);
+        result.put("message", "이메일 또는 비밀번호가 올바르지 않습니다.");
     }
+    return result;
+}
 
     // =====================
     // 🔹 이메일 확인 & 인증코드 전송

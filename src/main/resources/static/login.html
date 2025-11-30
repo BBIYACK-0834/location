@@ -19,7 +19,7 @@
             padding: 40px;
             border: 1px solid #dbdbdb;
             border-radius: 1px;
-            width: 300px; /* 인스타 스타일 느낌 */
+            width: 300px;
             text-align: center;
         }
         .login-container h2 {
@@ -34,14 +34,14 @@
             border: 1px solid #dbdbdb;
             border-radius: 3px;
             background: #fafafa;
-            box-sizing: border-box; /* 패딩 포함 크기 계산 */
+            box-sizing: border-box;
             font-size: 14px;
         }
         .login-container button {
             width: 100%;
             padding: 8px;
             margin-top: 10px;
-            background: #3897f0; /* 인스타 블루 */
+            background: #3897f0;
             color: #fff;
             border: none;
             border-radius: 4px;
@@ -79,7 +79,6 @@
     <h2>Login</h2>
     
     <input type="text" id="email" placeholder="이메일 주소">
-    
     <input type="password" id="password" placeholder="비밀번호">
     
     <button id="loginBtn">로그인</button>
@@ -92,15 +91,17 @@
     <button id="signupBtn">가입하기</button>
 </div>
 
+<script src="/js/api.js"></script>
+
 <script>
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
     const messageDiv = document.getElementById('message');
-
+    
     // [로그인 버튼 클릭 시]
     loginBtn.addEventListener('click', () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
 
         // 유효성 체크
         if (!email || !password) {
@@ -108,9 +109,8 @@
             return;
         }
 
-        // 백엔드로 전송 (키값: email, password)
-        // [주의] 주소가 본인의 Codespaces 주소인지 확인하세요!
-        fetch('https://glorious-broccoli-599jx6g57jxh4rwx-8080.app.github.dev/user/login', {
+        // 로그인 요청 (토큰 없이 맨몸으로 요청해야 함 -> fetch 사용)
+        fetch(`${BASE_URL}/user/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -126,10 +126,14 @@
                 // 로그인 성공 시
                 messageDiv.style.color = '#3897f0';
                 messageDiv.textContent = '로그인 성공! 이동 중...';
-                localStorage.setItem("userEmail", email);
+                
+                // ★ [핵심] 토큰과 이메일 둘 다 저장!
+                localStorage.setItem("accessToken", data.accessToken);
+                localStorage.setItem("userEmail", data.email); // 마이페이지 조회용
+
                 // 잠시 후 지도 페이지로 이동
                 setTimeout(() => {
-                    window.location.href = 'map.html'; // 지도 페이지 파일명
+                    window.location.href = 'map.html';
                 }, 500);
             } else {
                 // 로그인 실패 시
@@ -146,7 +150,7 @@
 
     // [회원가입 버튼 클릭 시]
     signupBtn.addEventListener('click', () => {
-        window.location.href = 'signup.html'; // 회원가입 페이지로 이동
+        window.location.href = 'signup.html';
     });
     
     // 엔터키 입력 시 로그인 실행
