@@ -38,4 +38,7 @@ public class UserEntity {
 
     // 권한 (기본값 USER)
     private String role = "USER";
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isPrivate = true; // true면 비공개, false면 공개(기본값)
 }

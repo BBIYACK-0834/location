@@ -10,7 +10,10 @@
   
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fafafa; margin: 0; padding: 0; padding-bottom: 60px; height: 100vh; display: flex; flex-direction: column; }
-    .profile-header { background: white; padding: 20px; border-bottom: 1px solid #dbdbdb; flex-shrink: 0; }
+    
+    /* [수정됨] position: relative 추가 (내부 절대 위치 요소를 위해) */
+    .profile-header { background: white; padding: 20px; border-bottom: 1px solid #dbdbdb; flex-shrink: 0; position: relative; }
+    
     .profile-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
     .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 1px solid #dbdbdb; margin-right: 20px; }
     .stats-container { display: flex; flex: 1; justify-content: space-around; text-align: center; }
@@ -22,6 +25,18 @@
     .bio { font-size: 14px; color: #262626; white-space: pre-wrap; }
     .btn-group { display: flex; gap: 10px; }
     .profile-btn { flex: 1; background-color: #efefef; border: 1px solid #dbdbdb; padding: 6px 0; border-radius: 4px; font-weight: 600; font-size: 14px; cursor: pointer; text-align: center; color: #262626; }
+    
+    /* [추가됨] 설정 버튼 스타일 */
+    .settings-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 20px;
+        color: #262626;
+        cursor: pointer;
+        z-index: 10;
+    }
+
     .map-container-box { flex: 1; background: white; position: relative; border-top: 1px solid #dbdbdb; }
     .map-title { padding: 10px 15px; font-weight: bold; color: #262626; font-size: 14px; border-bottom: 1px solid #eee; background: #fff; }
     #myMap { width: 100%; height: 100%; }
@@ -38,6 +53,11 @@
 <body>
 
 <div class="profile-header">
+  
+  <div class="settings-btn" onclick="location.href='settings.html'">
+    <i class="fas fa-cog"></i>
+  </div>
+
   <div class="profile-top">
     <img id="profileImg" src="https://via.placeholder.com/150" class="profile-img">
     <div class="stats-container">
@@ -88,16 +108,11 @@
     loadProfileData(); 
   };
 
-  // 👇👇 [이 함수가 없어서 에러가 났던 겁니다! 추가됨] 👇👇
   function getSafeImageUrl(imgName) {
-      // 이미지가 없거나 너무 짧으면 기본 이미지 반환
       if (!imgName || imgName.length < 3) return "https://via.placeholder.com/150"; 
-      // 이미 http로 시작하면 그대로 반환 (외부 링크)
       if (imgName.startsWith("http")) return imgName; 
-      // 파일명이면 서버 주소 붙여서 반환
       return `${BASE_URL}/images/${imgName}`; 
   }
-  // 👆👆👆👆👆👆
 
   function initMap() {
     const container = document.getElementById('myMap');
@@ -112,7 +127,6 @@
 
   async function loadProfileData() {
     try {
-      // authFetch 사용
       const res = await authFetch(`/user/profile/${myEmail}`);
       
       if (!res) return; 
@@ -162,9 +176,6 @@
     }
   }
 
-  // ==========================================
-  // 👇 클러스터링 알고리즘 (map.html과 동일)
-  // ==========================================
   function averagePosition(positions) {
     let lat = 0, lng = 0;
     positions.forEach(p => { lat += p.getLat(); lng += p.getLng(); });

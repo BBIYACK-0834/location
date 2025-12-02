@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설정</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fafafa;
+      margin: 0; padding: 0;
+    }
+
+    /* 상단 헤더 */
+    .header {
+      background: white; border-bottom: 1px solid #dbdbdb;
+      padding: 15px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-title { font-weight: bold; font-size: 18px; color: #262626; }
+    .back-btn { font-size: 20px; color: #262626; cursor: pointer; border: none; background: none; }
+    .placeholder { width: 20px; }
+
+    /* 설정 섹션 */
+    .section-title {
+      padding: 15px 20px 5px; color: #8e8e8e; font-size: 14px; font-weight: 600;
+      margin-top: 10px;
+    }
+    .settings-box {
+      background: white; border-top: 1px solid #dbdbdb; border-bottom: 1px solid #dbdbdb;
+      margin-bottom: 20px;
+    }
+    .settings-item {
+      padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #efefef;
+    }
+    .settings-item:last-child { border-bottom: none; }
+    
+    .label-text { font-size: 16px; color: #262626; }
+    
+    /* 토글 스위치 */
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; transition: .4s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 20px; width: 20px;
+      left: 2px; bottom: 2px; background-color: white;
+      transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #3897f0; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* 입력 필드 */
+    .input-group { display: flex; flex-direction: column; width: 100%; gap: 10px; }
+    .input-field {
+      padding: 10px; border: 1px solid #dbdbdb; border-radius: 4px;
+      background: #fafafa; font-size: 14px;
+    }
+    .action-btn {
+      padding: 10px; background-color: #3897f0; color: white;
+      border: none; border-radius: 4px; font-weight: 600; cursor: pointer;
+      margin-top: 5px;
+    }
+    .action-btn:disabled { background-color: #b2dffc; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+  <div class="header-title">설정</div>
+  <div class="placeholder"></div>
+</div>
+
+<div class="section-title">계정 공개 범위</div>
+<div class="settings-box">
+  <div class="settings-item">
+    <div class="label-text">비공개 계정</div>
+    <label class="switch">
+      <input type="checkbox" id="privateToggle" onchange="togglePrivacy()">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p style="padding: 0 20px 15px; font-size: 12px; color: #8e8e8e; margin: 0;">
+    계정이 비공개 상태인 경우, 승인된 팔로워만 회원님의 게시물을 볼 수 있습니다.
+  </p>
+</div>
+
+<div class="section-title">보안</div>
+<div class="settings-box">
+  <div class="settings-item" style="display: block;">
+    <div class="input-group">
+      <input type="password" id="currentPw" class="input-field" placeholder="현재 비밀번호">
+      <input type="password" id="newPw" class="input-field" placeholder="새 비밀번호">
+      <input type="password" id="confirmPw" class="input-field" placeholder="새 비밀번호 확인">
+      <button class="action-btn" onclick="changePassword()">비밀번호 변경</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // 페이지 로드 시 현재 설정 상태 가져오기
+  window.onload = function() {
+    loadSettings();
+  };
+
+  async function loadSettings() {
+    const email = localStorage.getItem("userEmail");
+    if(!email) return;
+
+    try {
+      // 프로필 정보를 재활용하여 현재 비공개 여부를 확인합니다.
+      const res = await authFetch(`/user/profile/${email}`);
+      const data = await res.json();
+      
+      // 서버에서 isPrivate 값을 준다고 가정 (UserProfileDto 수정 필요)
+      // 만약 DTO 수정을 안했다면 기본값 false로 처리됨
+      const isPrivate = data.private || false; 
+      document.getElementById("privateToggle").checked = isPrivate;
+      
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  // 1. 공개/비공개 토글
+  async function togglePrivacy() {
+    const isPrivate = document.getElementById("privateToggle").checked;
+    
+    try {
+      const res = await authFetch('/user/visibility', {
+        method: 'PUT',
+        body: JSON.stringify({ isPrivate: isPrivate })
+      });
+      const data = await res.json();
+      
+      if(data.success) {
+        // 성공 시 별도 알림 없이 스위치 상태 유지
+        console.log("변경 완료:", data.message);
+      } else {
+        alert("설정 변경 실패: " + data.message);
+        // 실패 시 스위치 원상복구
+        document.getElementById("privateToggle").checked = !isPrivate;
+      }
+    } catch(err) {
+      alert("서버 오류 발생");
+      document.getElementById("privateToggle").checked = !isPrivate;
+    }
+  }
+
+  // 2. 비밀번호 변경
+  async function changePassword() {
+    const currentPw = document.getElementById("currentPw").value;
+    const newPw = document.getElementById("newPw").value;
+    const confirmPw = document.getElementById("confirmPw").value;
+
+    if(!currentPw || !newPw || !confirmPw) {
+      alert("모든 필드를 입력해주세요.");
+      return;
+    }
+    if(newPw !== confirmPw) {
+      alert("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    try {
+      const res = await authFetch('/user/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: currentPw,
+          newPassword: newPw
+        })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        alert("비밀번호가 변경되었습니다. 다시 로그인해주세요.");
+        // 로그아웃 처리
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userEmail");
+        location.href = "login.html";
+      } else {
+        alert(data.message);
+      }
+    } catch(err) {
+      console.error(err);
+      alert("비밀번호 변경 중 오류가 발생했습니다.");
+    }
+  }
+</script>
+
+</body>
+</html>

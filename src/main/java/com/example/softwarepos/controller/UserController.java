@@ -8,6 +8,8 @@ import com.example.softwarepos.repository.PlaceRepository;
 import com.example.softwarepos.repository.UserRepository;
 import com.example.softwarepos.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -206,6 +208,59 @@ public Map<String, Object> login(@RequestBody UserDto loginRequest) {
         }
 
         UserEntity user = userOpt.get();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("message", "비밀번호가 성공적으로 변경되었습니다.");
+        return result;
+    }
+    // com.example.softwarepos.controller.UserController 내부
+
+    // =====================
+    // 6. [설정] 계정 공개/비공개 전환
+    // =====================
+    @PutMapping("/visibility")
+    public Map<String, Object> updateVisibility(@RequestBody Map<String, Boolean> request) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 1. 현재 로그인한 사용자 찾기 (JWT 토큰 기반)
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 2. 값 변경
+        Boolean isPrivate = request.get("isPrivate");
+        user.setPrivate(isPrivate);
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("message", isPrivate ? "계정이 비공개로 전환되었습니다." : "계정이 공개로 전환되었습니다.");
+        return result;
+    }
+
+    // =====================
+    // 7. [설정] 비밀번호 변경 (로그인 상태에서 변경)
+    // =====================
+    @PutMapping("/change-password")
+    public Map<String, Object> changePassword(@RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
+
+        // 1. 현재 비밀번호가 맞는지 확인
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            result.put("success", false);
+            result.put("message", "현재 비밀번호가 일치하지 않습니다.");
+            return result;
+        }
+
+        // 2. 새 비밀번호로 업데이트
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 

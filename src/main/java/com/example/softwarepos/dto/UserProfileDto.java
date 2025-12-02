@@ -22,5 +22,6 @@ public class UserProfileDto {
         private String productImage;
         private String latitude;
         private String longitude;
+        private boolean isPrivate;
     }
 }
